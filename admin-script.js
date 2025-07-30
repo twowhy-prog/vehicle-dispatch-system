@@ -21,28 +21,7 @@ function loadData() {
     operations = JSON.parse(localStorage.getItem('operations')) || [];
     inspections = JSON.parse(localStorage.getItem('inspections')) || [];
     
-    // 샘플 데이터가 없으면 기본 차량 추가
-    if (vehicles.length === 0) {
-        vehicles = [
-            {
-                id: 1,
-                number: '12가3456',
-                type: '승용차',
-                model: '현대 아반떼',
-                capacity: 5,
-                status: '사용가능'
-            },
-            {
-                id: 2,
-                number: '34나5678',
-                type: '승합차',
-                model: '기아 카니발',
-                capacity: 9,
-                status: '사용가능'
-            }
-        ];
-        localStorage.setItem('vehicles', JSON.stringify(vehicles));
-    }
+    // 저장된 데이터가 없으면 빈 배열 유지
 }
 
 // 이벤트 리스너 설정

@@ -27,13 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 앱 초기화
 function initializeApp() {
-    // 샘플 데이터 추가 (처음 실행 시)
-    if (vehicles.length === 0) {
-        addSampleVehicles();
-    }
-    if (dispatches.length === 0) {
-        addSampleDispatches();
-    }
+    // 저장된 데이터가 없으면 빈 배열 유지
 }
 
 // 이벤트 리스너 설정
@@ -511,80 +505,6 @@ function saveDispatches() {
 }
 
 // 샘플 데이터 추가
-function addSampleVehicles() {
-    const sampleVehicles = [
-        {
-            id: '1',
-            number: '12가3456',
-            type: '승용차',
-            capacity: 5,
-            driver: '김운전',
-            status: 'available',
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: '2',
-            number: '34나5678',
-            type: '승합차',
-            capacity: 12,
-            driver: '이운전',
-            status: 'available',
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: '3',
-            number: '56다7890',
-            type: '트럭',
-            capacity: 3,
-            driver: '박운전',
-            status: 'maintenance',
-            createdAt: new Date().toISOString()
-        }
-    ];
-    
-    vehicles = sampleVehicles;
-    saveVehicles();
-}
-
-function addSampleDispatches() {
-    const sampleDispatches = [
-        {
-            id: '1',
-            requester: '홍길동',
-            department: '영업팀',
-            purpose: '고객 미팅',
-            destination: '강남구 테헤란로 123',
-            startDate: new Date().toISOString().split('T')[0],
-            startTime: '09:00',
-            endDate: new Date().toISOString().split('T')[0],
-            endTime: '18:00',
-            passengers: 3,
-            priority: 'medium',
-            notes: '고객사 방문 예정',
-            status: 'pending',
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: '2',
-            requester: '김철수',
-            department: '기술팀',
-            purpose: '장비 운반',
-            destination: '서울시 송파구',
-            startDate: new Date().toISOString().split('T')[0],
-            startTime: '10:00',
-            endDate: new Date().toISOString().split('T')[0],
-            endTime: '16:00',
-            passengers: 2,
-            priority: 'high',
-            notes: '중량 장비 운반',
-            status: 'approved',
-            createdAt: new Date().toISOString()
-        }
-    ];
-    
-    dispatches = sampleDispatches;
-    saveDispatches();
-}
 
 // 모바일 최적화 설정
 function setupMobileOptimizations() {
