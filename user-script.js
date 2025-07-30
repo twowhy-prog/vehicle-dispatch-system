@@ -1,0 +1,290 @@
+// 전역 변수
+let vehicles = [];
+let dispatches = [];
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    setupEventListeners();
+    setupMobileOptimizations();
+});
+
+// 앱 초기화
+function initializeApp() {
+    loadData();
+    renderVehicles();
+    renderDispatches();
+}
+
+// 데이터 로드
+function loadData() {
+    vehicles = JSON.parse(localStorage.getItem('vehicles')) || [];
+    dispatches = JSON.parse(localStorage.getItem('dispatches')) || [];
+    
+    // 샘플 데이터가 없으면 기본 차량 추가
+    if (vehicles.length === 0) {
+        vehicles = [
+            {
+                id: 1,
+                number: '12가3456',
+                type: '승용차',
+                model: '현대 아반떼',
+                capacity: 5,
+                status: '사용가능'
+            },
+            {
+                id: 2,
+                number: '34나5678',
+                type: '승합차',
+                model: '기아 카니발',
+                capacity: 9,
+                status: '사용가능'
+            }
+        ];
+        localStorage.setItem('vehicles', JSON.stringify(vehicles));
+    }
+}
+
+// 이벤트 리스너 설정
+function setupEventListeners() {
+    // 배차 신청 폼
+    const dispatchForm = document.getElementById('dispatchForm');
+    if (dispatchForm) {
+        dispatchForm.addEventListener('submit', handleDispatchSubmit);
+    }
+    
+    // 검색 기능
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearch);
+    }
+    
+    // 상태 필터
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', handleFilter);
+    });
+}
+
+// 모바일 최적화 설정
+function setupMobileOptimizations() {
+    // 터치 이벤트 최적화
+    document.addEventListener('touchstart', function() {}, {passive: true});
+    document.addEventListener('touchmove', function() {}, {passive: true});
+    
+    // 모바일에서 스크롤 성능 개선
+    document.addEventListener('scroll', function() {}, {passive: true});
+    
+    // 모바일에서 더블탭 줌 방지
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+    
+    // 모바일에서 입력 필드 포커스 시 자동 확대 방지
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    this.scrollIntoView({behavior: 'smooth', block: 'center'});
+                }, 300);
+            }
+        });
+    });
+}
+
+// 섹션 전환
+function showSection(sectionId) {
+    // 모든 섹션 숨기기
+    const sections = document.querySelectorAll('.content-section');
+    sections.forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // 모든 네비게이션 버튼 비활성화
+    const navButtons = document.querySelectorAll('.nav-btn');
+    navButtons.forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // 선택된 섹션과 버튼 활성화
+    const targetSection = document.getElementById(sectionId);
+    const targetButton = document.querySelector(`[onclick="showSection('${sectionId}')"]`);
+    
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
+}
+
+// 차량 목록 렌더링
+function renderVehicles() {
+    const vehicleSelect = document.getElementById('vehicleSelect');
+    if (!vehicleSelect) return;
+    
+    vehicleSelect.innerHTML = '<option value="">차량을 선택하세요</option>';
+    
+    vehicles.forEach(vehicle => {
+        if (vehicle.status === '사용가능') {
+            const option = document.createElement('option');
+            option.value = vehicle.id;
+            option.textContent = `${vehicle.number} (${vehicle.type})`;
+            vehicleSelect.appendChild(option);
+        }
+    });
+}
+
+// 배차 목록 렌더링
+function renderDispatches() {
+    const dispatchList = document.getElementById('dispatchList');
+    if (!dispatchList) return;
+    
+    dispatchList.innerHTML = '';
+    
+    dispatches.forEach(dispatch => {
+        const dispatchCard = createDispatchCard(dispatch);
+        dispatchList.appendChild(dispatchCard);
+    });
+}
+
+// 배차 카드 생성
+function createDispatchCard(dispatch) {
+    const card = document.createElement('div');
+    card.className = 'dispatch-card';
+    
+    const vehicle = vehicles.find(v => v.id == dispatch.vehicleId);
+    const vehicleInfo = vehicle ? `${vehicle.number} (${vehicle.type})` : '차량 정보 없음';
+    
+    card.innerHTML = `
+        <div class="dispatch-header">
+            <div class="dispatch-title">
+                <h4>${dispatch.requester} - ${dispatch.department}</h4>
+                <span class="dispatch-priority priority-${getPriorityClass(dispatch.priority)}">
+                    ${dispatch.priority}
+                </span>
+            </div>
+        </div>
+        <div class="dispatch-info">
+            <span><i class="fas fa-car"></i> ${vehicleInfo}</span>
+            <span><i class="fas fa-calendar"></i> ${dispatch.requestDate}</span>
+            <span><i class="fas fa-clock"></i> ${dispatch.startTime} - ${dispatch.endTime}</span>
+            <span><i class="fas fa-map-marker-alt"></i> ${dispatch.destination}</span>
+            <span><i class="fas fa-comment"></i> ${dispatch.purpose}</span>
+        </div>
+        <div class="dispatch-status status-${getStatusClass(dispatch.status)}">
+            ${dispatch.status}
+        </div>
+    `;
+    
+    return card;
+}
+
+// 우선순위 클래스 반환
+function getPriorityClass(priority) {
+    switch(priority) {
+        case '보통': return 'low';
+        case '긴급': return 'medium';
+        case '매우긴급': return 'high';
+        default: return 'low';
+    }
+}
+
+// 상태 클래스 반환
+function getStatusClass(status) {
+    switch(status) {
+        case '대기중': return 'pending';
+        case '승인': return 'approved';
+        case '거부': return 'cancelled';
+        default: return 'pending';
+    }
+}
+
+// 배차 신청 처리
+function handleDispatchSubmit(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const dispatchData = {
+        id: Date.now(),
+        requester: formData.get('requester'),
+        department: formData.get('department'),
+        vehicleId: formData.get('vehicleSelect'),
+        requestDate: formData.get('requestDate'),
+        startTime: formData.get('startTime'),
+        endTime: formData.get('endTime'),
+        destination: formData.get('destination'),
+        purpose: formData.get('purpose'),
+        priority: formData.get('priority'),
+        status: '대기중',
+        requestTime: new Date().toISOString()
+    };
+    
+    dispatches.push(dispatchData);
+    localStorage.setItem('dispatches', JSON.stringify(dispatches));
+    
+    showNotification('배차 신청이 완료되었습니다.', 'success');
+    event.target.reset();
+    renderDispatches();
+}
+
+// 검색 처리
+function handleSearch(event) {
+    const searchTerm = event.target.value.toLowerCase();
+    const dispatchCards = document.querySelectorAll('.dispatch-card');
+    
+    dispatchCards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// 필터 처리
+function handleFilter(event) {
+    const status = event.target.dataset.status;
+    
+    // 모든 필터 버튼 비활성화
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // 클릭된 버튼 활성화
+    event.target.classList.add('active');
+    
+    // 배차 카드 필터링
+    const dispatchCards = document.querySelectorAll('.dispatch-card');
+    dispatchCards.forEach(card => {
+        const statusElement = card.querySelector('.dispatch-status');
+        const cardStatus = statusElement ? statusElement.textContent.trim() : '';
+        
+        if (status === 'all' || cardStatus === status) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// 알림 표시
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+    
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.display = 'block';
+    
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+} 

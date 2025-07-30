@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#667eea">
+    <title>차량 배차 시스템 - 관리자</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- 로그인 화면 -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <h2><i class="fas fa-user-shield"></i> 관리자 로그인</h2>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="adminPassword">관리자 비밀번호</label>
+                    <input type="password" id="adminPassword" name="adminPassword" required placeholder="비밀번호를 입력하세요">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> 로그인
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="location.href='user.html'">
+                        <i class="fas fa-arrow-left"></i> 사용자 페이지로
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 관리자 메인 화면 -->
+    <div id="adminMain" class="admin-main" style="display: none;">
+        <header>
+            <h1><i class="fas fa-car"></i> 차량 배차 시스템</h1>
+            <p>관리자 페이지 - 차량 및 배차 관리</p>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> 로그아웃
+                </button>
+                <button class="btn btn-secondary" onclick="location.href='user.html'">
+                    <i class="fas fa-users"></i> 사용자 페이지
+                </button>
+            </div>
+        </header>
+
+        <div class="container">
+            <nav class="main-nav">
+                <button class="nav-btn active" onclick="showSection('vehicle-management')">
+                    <i class="fas fa-car"></i> 차량 관리
+                </button>
+                <button class="nav-btn" onclick="showSection('dispatch-management')">
+                    <i class="fas fa-list"></i> 배차 관리
+                </button>
+                <button class="nav-btn" onclick="showSection('operation-log')">
+                    <i class="fas fa-route"></i> 운행 일지
+                </button>
+                <button class="nav-btn" onclick="showSection('inspection-log')">
+                    <i class="fas fa-tools"></i> 점검 일지
+                </button>
+                <button class="nav-btn" onclick="showSection('dashboard')">
+                    <i class="fas fa-chart-bar"></i> 통계
+                </button>
+                <button class="nav-btn" onclick="showSection('export')">
+                    <i class="fas fa-file-excel"></i> 엑셀 내보내기
+                </button>
+            </nav>
+
+            <main class="main-content">
+                <!-- 차량 관리 섹션 -->
+                <section id="vehicle-management" class="content-section active">
+                    <h2><i class="fas fa-car"></i> 차량 관리</h2>
+                    
+                    <div class="section-actions">
+                        <button class="btn btn-primary" onclick="showVehicleModal()">
+                            <i class="fas fa-plus"></i> 새 차량 등록
+                        </button>
+                    </div>
+                    
+                    <div class="search-filter">
+                        <input type="text" id="vehicleSearchInput" placeholder="차량 검색..." class="search-input">
+                    </div>
+                    
+                    <div id="vehicleList" class="vehicle-list">
+                        <!-- 차량 목록이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </section>
+
+                <!-- 배차 관리 섹션 -->
+                <section id="dispatch-management" class="content-section">
+                    <h2><i class="fas fa-list"></i> 배차 관리</h2>
+                    
+                    <div class="search-filter">
+                        <input type="text" id="dispatchSearchInput" placeholder="검색어를 입력하세요..." class="search-input">
+                        <div class="status-filters">
+                            <button class="filter-btn active" data-status="all">전체</button>
+                            <button class="filter-btn" data-status="대기중">대기중</button>
+                            <button class="filter-btn" data-status="승인">승인</button>
+                            <button class="filter-btn" data-status="거부">거부</button>
+                        </div>
+                    </div>
+                    
+                    <div id="adminDispatchList" class="dispatch-list">
+                        <!-- 배차 목록이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </section>
+
+                <!-- 운행 일지 섹션 -->
+                <section id="operation-log" class="content-section">
+                    <h2><i class="fas fa-route"></i> 차량 운행 일지</h2>
+                    
+                    <div class="section-actions">
+                        <button class="btn btn-primary" onclick="showOperationModal()">
+                            <i class="fas fa-plus"></i> 운행 기록 추가
+                        </button>
+                    </div>
+                    
+                    <div class="search-filter">
+                        <input type="text" id="operationSearchInput" placeholder="운행 기록 검색..." class="search-input">
+                        <div class="status-filters">
+                            <button class="filter-btn active" data-operation-status="all">전체</button>
+                            <button class="filter-btn" data-operation-status="완료">완료</button>
+                            <button class="filter-btn" data-operation-status="진행중">진행중</button>
+                        </div>
+                    </div>
+                    
+                    <div id="operationList" class="operation-list">
+                        <!-- 운행 기록 목록이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </section>
+
+                <!-- 점검 일지 섹션 -->
+                <section id="inspection-log" class="content-section">
+                    <h2><i class="fas fa-tools"></i> 차량 점검 일지</h2>
+                    
+                    <div class="section-actions">
+                        <button class="btn btn-primary" onclick="showInspectionModal()">
+                            <i class="fas fa-plus"></i> 점검 기록 추가
+                        </button>
+                    </div>
+                    
+                    <div class="search-filter">
+                        <input type="text" id="inspectionSearchInput" placeholder="점검 기록 검색..." class="search-input">
+                        <div class="status-filters">
+                            <button class="filter-btn active" data-inspection-status="all">전체</button>
+                            <button class="filter-btn" data-inspection-status="정기점검">정기점검</button>
+                            <button class="filter-btn" data-inspection-status="수리">수리</button>
+                            <button class="filter-btn" data-inspection-status="긴급점검">긴급점검</button>
+                        </div>
+                    </div>
+                    
+                    <div id="inspectionList" class="inspection-list">
+                        <!-- 점검 기록 목록이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </section>
+
+                <!-- 통계 대시보드 섹션 -->
+                <section id="dashboard" class="content-section">
+                    <h2><i class="fas fa-chart-bar"></i> 통계 대시보드</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>총 차량 수</h3>
+                                <p id="totalVehicles">0</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>대기중인 요청</h3>
+                                <p id="pendingRequests">0</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>승인된 요청</h3>
+                                <p id="approvedRequests">0</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>거부된 요청</h3>
+                                <p id="rejectedRequests">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 엑셀 내보내기 섹션 -->
+                <section id="export" class="content-section">
+                    <h2><i class="fas fa-file-excel"></i> 엑셀 내보내기</h2>
+                    
+                    <div class="export-options">
+                        <div class="export-card">
+                            <h3>일일 보고서</h3>
+                            <p>오늘 날짜의 배차 현황</p>
+                            <button class="btn btn-primary" onclick="exportToExcel('daily')">
+                                <i class="fas fa-download"></i> 다운로드
+                            </button>
+                        </div>
+                        
+                        <div class="export-card">
+                            <h3>주간 보고서</h3>
+                            <p>이번 주 배차 현황</p>
+                            <button class="btn btn-primary" onclick="exportToExcel('weekly')">
+                                <i class="fas fa-download"></i> 다운로드
+                            </button>
+                        </div>
+                        
+                        <div class="export-card">
+                            <h3>월간 보고서</h3>
+                            <p>이번 달 배차 현황</p>
+                            <button class="btn btn-primary" onclick="exportToExcel('monthly')">
+                                <i class="fas fa-download"></i> 다운로드
+                            </button>
+                        </div>
+                        
+                        <div class="export-card">
+                            <h3>연간 보고서</h3>
+                            <p>올해 배차 현황</p>
+                            <button class="btn btn-primary" onclick="exportToExcel('yearly')">
+                                <i class="fas fa-download"></i> 다운로드
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- 차량 등록/수정 모달 -->
+    <div id="vehicleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="vehicleModalTitle">새 차량 등록</h3>
+                <button class="close-btn" onclick="closeVehicleModal()">&times;</button>
+            </div>
+            <form id="vehicleForm" class="form">
+                <div class="form-group">
+                    <label for="vehicleNumber">차량 번호 *</label>
+                    <input type="text" id="vehicleNumber" name="vehicleNumber" required placeholder="차량 번호">
+                </div>
+                
+                <div class="form-group">
+                    <label for="vehicleType">차량 종류 *</label>
+                    <select id="vehicleType" name="vehicleType" required>
+                        <option value="">차량 종류 선택</option>
+                        <option value="승용차">승용차</option>
+                        <option value="승합차">승합차</option>
+                        <option value="트럭">트럭</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="vehicleModel">차량 모델</label>
+                    <input type="text" id="vehicleModel" name="vehicleModel" placeholder="차량 모델">
+                </div>
+                
+                <div class="form-group">
+                    <label for="vehicleCapacity">수용 인원</label>
+                    <input type="number" id="vehicleCapacity" name="vehicleCapacity" placeholder="수용 인원">
+                </div>
+                
+                <div class="form-group">
+                    <label for="vehicleStatus">상태 *</label>
+                    <select id="vehicleStatus" name="vehicleStatus" required>
+                        <option value="사용가능">사용가능</option>
+                        <option value="점검중">점검중</option>
+                        <option value="사용불가">사용불가</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 저장
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeVehicleModal()">
+                        <i class="fas fa-times"></i> 취소
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 운행 일지 모달 -->
+    <div id="operationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="operationModalTitle">운행 기록 추가</h3>
+                <button class="close-btn" onclick="closeOperationModal()">&times;</button>
+            </div>
+            <form id="operationForm" class="form">
+                <div class="form-group">
+                    <label for="operationVehicle">차량 선택 *</label>
+                    <select id="operationVehicle" name="operationVehicle" required>
+                        <option value="">차량을 선택하세요</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationDate">운행 날짜 *</label>
+                    <input type="date" id="operationDate" name="operationDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationDriver">운전자 *</label>
+                    <input type="text" id="operationDriver" name="operationDriver" required placeholder="운전자 이름">
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationStartLocation">출발지 *</label>
+                    <input type="text" id="operationStartLocation" name="operationStartLocation" required placeholder="출발지">
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationEndLocation">도착지 *</label>
+                    <input type="text" id="operationEndLocation" name="operationEndLocation" required placeholder="도착지">
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationStartTime">출발 시간 *</label>
+                    <input type="time" id="operationStartTime" name="operationStartTime" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationEndTime">도착 시간 *</label>
+                    <input type="time" id="operationEndTime" name="operationEndTime" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationActualKm">실제 주행 거리 (km) *</label>
+                    <input type="number" id="operationActualKm" name="operationActualKm" required placeholder="실제 주행 거리">
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationGoogleKm">구글맵 거리 (km)</label>
+                    <input type="number" id="operationGoogleKm" name="operationGoogleKm" placeholder="구글맵 계산 거리">
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationPurpose">운행 목적</label>
+                    <input type="text" id="operationPurpose" name="operationPurpose" placeholder="운행 목적">
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationRemarks">비고 (통행료, 주유/충전비 등)</label>
+                    <textarea id="operationRemarks" name="operationRemarks" placeholder="통행료, 주유/충전비, 기타 비용 등을 기록하세요"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationStatus">상태 *</label>
+                    <select id="operationStatus" name="operationStatus" required>
+                        <option value="완료">완료</option>
+                        <option value="진행중">진행중</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 저장
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeOperationModal()">
+                        <i class="fas fa-times"></i> 취소
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 점검 일지 모달 -->
+    <div id="inspectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="inspectionModalTitle">점검 기록 추가</h3>
+                <button class="close-btn" onclick="closeInspectionModal()">&times;</button>
+            </div>
+            <form id="inspectionForm" class="form">
+                <div class="form-group">
+                    <label for="inspectionVehicle">차량 선택 *</label>
+                    <select id="inspectionVehicle" name="inspectionVehicle" required>
+                        <option value="">차량을 선택하세요</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inspectionDate">점검 날짜 *</label>
+                    <input type="date" id="inspectionDate" name="inspectionDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inspectionType">점검 유형 *</label>
+                    <select id="inspectionType" name="inspectionType" required>
+                        <option value="">점검 유형 선택</option>
+                        <option value="정기점검">정기점검</option>
+                        <option value="수리">수리</option>
+                        <option value="긴급점검">긴급점검</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inspectionInspector">점검자 *</label>
+                    <input type="text" id="inspectionInspector" name="inspectionInspector" required placeholder="점검자 이름">
+                </div>
+                
+                <div class="form-group">
+                    <label for="inspectionDescription">점검 내용 *</label>
+                    <textarea id="inspectionDescription" name="inspectionDescription" required placeholder="점검한 내용을 상세히 기록하세요"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inspectionCost">점검 비용</label>
+                    <input type="number" id="inspectionCost" name="inspectionCost" placeholder="점검 비용 (원)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="inspectionNextDate">다음 점검 예정일</label>
+                    <input type="date" id="inspectionNextDate" name="inspectionNextDate">
+                </div>
+                
+                <div class="form-group">
+                    <label for="inspectionNextItems">다음 점검 사항</label>
+                    <textarea id="inspectionNextItems" name="inspectionNextItems" placeholder="다음 점검 시 확인할 사항들을 기록하세요"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inspectionStatus">점검 상태 *</label>
+                    <select id="inspectionStatus" name="inspectionStatus" required>
+                        <option value="완료">완료</option>
+                        <option value="진행중">진행중</option>
+                        <option value="예정">예정</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 저장
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeInspectionModal()">
+                        <i class="fas fa-times"></i> 취소
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 알림 메시지 -->
+    <div id="notification" class="notification"></div>
+
+    <script src="admin-script.js"></script>
+</body>
+</html> 
