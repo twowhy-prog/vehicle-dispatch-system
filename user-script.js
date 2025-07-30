@@ -91,23 +91,23 @@ function validateDateTime(date, time) {
 }
 
 // 중복 배차 확인 함수
-function checkDuplicateDispatch(vehicle, date, startTime, endTime) {
+function checkDuplicateDispatch(vehicle, startDate, startTime, endDate, endTime) {
     const conflictingDispatches = dispatches.filter(dispatch => {
         if (dispatch.vehicle !== vehicle || dispatch.status === '거부됨' || dispatch.status === '취소됨') {
             return false;
         }
-        
-        const dispatchDate = dispatch.date;
+
+        const dispatchStartDate = dispatch.startDate;
         const dispatchStart = dispatch.startTime;
         const dispatchEnd = dispatch.endTime;
-        
+
         // 같은 날짜이고 시간이 겹치는지 확인
-        if (dispatchDate === date) {
-            const newStart = new Date(date + 'T' + startTime);
-            const newEnd = new Date(date + 'T' + endTime);
-            const existingStart = new Date(dispatchDate + 'T' + dispatchStart);
-            const existingEnd = new Date(dispatchDate + 'T' + dispatchEnd);
-            
+        if (dispatchStartDate === startDate && dispatch.endDate === endDate) {
+            const newStart = new Date(startDate + 'T' + startTime);
+            const newEnd = new Date(endDate + 'T' + endTime);
+            const existingStart = new Date(dispatchStartDate + 'T' + dispatchStart);
+            const existingEnd = new Date(dispatch.endDate + 'T' + dispatchEnd);
+
             return (newStart < existingEnd && newEnd > existingStart);
         }
         
@@ -125,8 +125,7 @@ function sendEmailNotification(dispatchData) {
 
 신청자: ${dispatchData.applicant}
 차량: ${dispatchData.vehicle}
-사용일: ${dispatchData.date}
-사용시간: ${dispatchData.startTime} ~ ${dispatchData.endTime}
+사용기간: ${dispatchData.startDate} ${dispatchData.startTime} ~ ${dispatchData.endDate} ${dispatchData.endTime}
 출발지: ${dispatchData.startLocation}
 도착지: ${dispatchData.endLocation}
 목적: ${dispatchData.purpose}
@@ -218,8 +217,8 @@ function createDispatchCard(dispatch) {
         </div>
         <div class="dispatch-info">
             <span><i class="fas fa-car"></i> ${vehicleInfo}</span>
-            <span><i class="fas fa-calendar"></i> ${dispatch.requestDate}</span>
-            <span><i class="fas fa-clock"></i> ${dispatch.startTime} - ${dispatch.endTime}</span>
+            <span><i class="fas fa-calendar"></i> ${dispatch.startDate} ${dispatch.startTime}</span>
+            <span><i class="fas fa-calendar"></i> ${dispatch.endDate} ${dispatch.endTime}</span>
             <span><i class="fas fa-map-marker-alt"></i> ${dispatch.destination}</span>
             <span><i class="fas fa-comment"></i> ${dispatch.purpose}</span>
         </div>
@@ -234,11 +233,10 @@ function createDispatchCard(dispatch) {
 // 우선순위 클래스 반환
 function getPriorityClass(priority) {
     switch (priority) {
-        case "low": return "low";
-        case "medium": return "medium";
-        case "high": return "high";
-        case "urgent": return "urgent";
-        default: return "low";
+        case '보통': return 'low';
+        case '긴급': return 'medium';
+        case '매우긴급': return 'high';
+        default: return 'low';
     }
 }
 
@@ -263,8 +261,9 @@ function handleDispatchSubmit(event) {
         requester: formData.get('requester'),
         department: formData.get('department'),
         vehicleId: formData.get('vehicleSelect'),
-        requestDate: formData.get('requestDate'),
+        startDate: formData.get('startDate'),
         startTime: formData.get('startTime'),
+        endDate: formData.get('endDate'),
         endTime: formData.get('endTime'),
         destination: formData.get('destination'),
         purpose: formData.get('purpose'),
@@ -274,13 +273,13 @@ function handleDispatchSubmit(event) {
     };
     
     // 시간 검증
-    if (!validateDateTime(dispatchData.requestDate, dispatchData.startTime)) {
+    if (!validateDateTime(dispatchData.startDate, dispatchData.startTime)) {
         showNotification('현재시간 기준 과거 일시로 배차를 입력할 수 없습니다. 일시를 확인해주세요.', 'error');
         return;
     }
 
     // 중복 배차 확인
-    if (checkDuplicateDispatch(dispatchData.vehicleId, dispatchData.requestDate, dispatchData.startTime, dispatchData.endTime)) {
+    if (checkDuplicateDispatch(dispatchData.vehicleId, dispatchData.startDate, dispatchData.startTime, dispatchData.endDate, dispatchData.endTime)) {
         if (!confirm('해당 차량은 이미 배차신청이 되어있습니다. 계속 진행하시겠습니까?')) {
             return;
         }

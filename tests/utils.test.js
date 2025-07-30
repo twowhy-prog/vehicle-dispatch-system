@@ -13,6 +13,6 @@ describe('Utility functions', () => {
   });
 
   test('getPriorityClass returns class name', () => {
-    expect(getPriorityClass('urgent')).toBe('urgent');
+    expect(getPriorityClass('긴급')).toBe('medium');
   });
 });
