@@ -21,28 +21,7 @@ function loadData() {
     vehicles = JSON.parse(localStorage.getItem('vehicles')) || [];
     dispatches = JSON.parse(localStorage.getItem('dispatches')) || [];
     
-    // 샘플 데이터가 없으면 기본 차량 추가
-    if (vehicles.length === 0) {
-        vehicles = [
-            {
-                id: 1,
-                number: '12가3456',
-                type: '승용차',
-                model: '현대 아반떼',
-                capacity: 5,
-                status: '사용가능'
-            },
-            {
-                id: 2,
-                number: '34나5678',
-                type: '승합차',
-                model: '기아 카니발',
-                capacity: 9,
-                status: '사용가능'
-            }
-        ];
-        localStorage.setItem('vehicles', JSON.stringify(vehicles));
-    }
+    // 저장된 데이터가 없으면 빈 배열 유지
 }
 
 // 이벤트 리스너 설정
@@ -373,29 +352,5 @@ function showNotification(message, type = 'info') {
     }, 3000);
 } 
 
-// EmailJS 초기화
-(function(){
-    emailjs.init("YOUR_USER_ID"); // 사용자 ID로 교체
-})();
-
-
-// 배차 신청 시 관리자에게 이메일 전송
-emailjs.send("gmail_service", "request_template", {
-    requester_name: formData.get("requester"),
-    requester_email: formData.get("email"),
-    message: "새로운 배차 신청이 접수되었습니다."
-});
-
-
-// EmailJS 초기화
-(function() {
-    emailjs.init("tv9jg-W2_pe0bM_0S");
-})();
-
-
-// 배차 신청 시 관리자에게 이메일 전송
-emailjs.send("twowhy", "template_flxeghe", {
-    requester_name: formData.get("requester"),
-    requester_email: formData.get("email"),
-    message: "배차 신청이 접수되었습니다."
-});
+// EmailJS 초기화 예제 코드는 삭제되었습니다. 실제 프로젝트에서는
+// emailjs.init(...) 및 emailjs.send(...) 호출을 적절히 구성하세요.
