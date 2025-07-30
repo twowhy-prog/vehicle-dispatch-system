@@ -1022,8 +1022,6 @@ ${action === 'approve' ? '승인' : '거부'}된 차량 배차 신청 정보입�
 ${action === 'approve' ? '승인된 배차는 운행일지에서 확인할 수 있습니다.' : '거부된 배차는 재신청이 필요합니다.'}
     `);
 
-    const mailtoLink = `mailto:${dispatch.applicant}@cpbc.co.kr?subject=${subject}&body=${body}`;
-    window.open(mailtoLink);
 }
 
 // 배차 승인/거부 함수 수정

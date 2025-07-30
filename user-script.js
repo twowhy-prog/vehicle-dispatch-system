@@ -157,10 +157,8 @@ function sendEmailNotification(dispatchData) {
 관리자 페이지에서 승인/거절을 처리해주세요.
     `);
 
-    const mailtoLink = `mailto:taxbillg1@cpbc.co.kr?subject=${subject}&body=${body}`;
 
     // 이메일 클라이언트 열기
-    window.open(mailtoLink);
 
     // 알림 표시
     showNotification('이메일 알림이 준비되었습니다. 이메일 클라이언트가 열리지 않으면 수동으로 관리자에게 연락해주세요.', 'info');
