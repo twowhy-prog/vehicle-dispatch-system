@@ -465,8 +465,11 @@ function handleVehicleSubmit(event) {
 
 // 차량 삭제 기능 수정
 function deleteVehicle(vehicleId) {
+    // vehicleId를 숫자로 변환
+    const id = parseInt(vehicleId);
+    
     if (confirm('정말로 이 차량을 삭제하시겠습니까?')) {
-        vehicles = vehicles.filter(vehicle => vehicle.id !== vehicleId);
+        vehicles = vehicles.filter(vehicle => vehicle.id !== id);
         localStorage.setItem('vehicles', JSON.stringify(vehicles));
         renderVehicles();
         updateDashboard();
