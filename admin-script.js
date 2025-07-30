@@ -1516,3 +1516,47 @@ function showOperationModal(operationId = null) {
         modal.style.display = 'block';
     }
 } 
+
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+        searchInput.addEventListener("input", function (e) {
+            const keyword = e.target.value.toLowerCase();
+            const filtered = dispatches.filter(d => d.requester && d.requester.toLowerCase().includes(keyword));
+            renderDispatches(filtered);
+        });
+    }
+});
+
+
+// EmailJS 초기화
+(function(){
+    emailjs.init("YOUR_USER_ID"); // 사용자 ID로 교체
+})();
+
+
+// 배차 승인 시 신청자에게 이메일 전송
+emailjs.send("gmail_service", "approval_template", {
+    requester_name: dispatch.requester,
+    requester_email: dispatch.email,
+    message: "신청하신 배차가 승인되었습니다."
+});
+
+
+// EmailJS 초기화
+(function() {
+    emailjs.init("tv9jg-W2_pe0bM_0S");
+})();
+
+
+// 배차 승인 시 신청자에게 이메일 전송
+const vehicle = vehicles.find(v => v.id == dispatch.vehicleId);
+const vehicleNumber = vehicle ? vehicle.number : "차량 정보 없음";
+
+emailjs.send("twowhy", "template_cyzz7wr", {
+    requester_name: dispatch.requester,
+    requester_email: dispatch.email,
+    vehicle_number: vehicleNumber,
+    dispatch_date: dispatch.date,
+    dispatch_time: dispatch.startTime + " ~ " + dispatch.endTime
+});

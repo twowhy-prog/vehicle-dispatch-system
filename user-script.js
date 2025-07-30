@@ -372,3 +372,30 @@ function showNotification(message, type = 'info') {
         notification.style.display = 'none';
     }, 3000);
 } 
+
+// EmailJS 초기화
+(function(){
+    emailjs.init("YOUR_USER_ID"); // 사용자 ID로 교체
+})();
+
+
+// 배차 신청 시 관리자에게 이메일 전송
+emailjs.send("gmail_service", "request_template", {
+    requester_name: formData.get("requester"),
+    requester_email: formData.get("email"),
+    message: "새로운 배차 신청이 접수되었습니다."
+});
+
+
+// EmailJS 초기화
+(function() {
+    emailjs.init("tv9jg-W2_pe0bM_0S");
+})();
+
+
+// 배차 신청 시 관리자에게 이메일 전송
+emailjs.send("twowhy", "template_flxeghe", {
+    requester_name: formData.get("requester"),
+    requester_email: formData.get("email"),
+    message: "배차 신청이 접수되었습니다."
+});

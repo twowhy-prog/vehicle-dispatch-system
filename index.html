@@ -1,217 +1,211 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#667eea">
-    <title>회사 차량 배차 시스템</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#667eea" name="theme-color"/>
+<title>CPBC 가톨릭평화방송 사내 배차 시스템</title>
+<link href="styles.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1><i class="fas fa-car"></i> 회사 차량 배차 시스템</h1>
-            <p>효율적인 차량 관리와 배차를 위한 시스템</p>
-            <div class="header-actions">
-                <button class="btn btn-primary" onclick="location.href='user.html'">
-                    <i class="fas fa-users"></i> 사용자 페이지
+<div class="container">
+<header>
+<h1><i class="fas fa-car"></i> 회사 차량 배차 시스템</h1>
+<p>효율적인 차량 관리와 배차를 위한 시스템</p>
+<div class="header-actions">
+<button class="btn btn-primary" onclick="location.href='user.html'">
+<i class="fas fa-users"></i> 사용자 페이지
                 </button>
-                <button class="btn btn-secondary" onclick="location.href='admin.html'">
-                    <i class="fas fa-user-shield"></i> 관리자 페이지
+<button class="btn btn-secondary" onclick="location.href='admin.html'">
+<i class="fas fa-user-shield"></i> 관리자 페이지
                 </button>
-            </div>
-        </header>
-
-        <div class="main-content">
-            <!-- 차량 관리 섹션 -->
-            <section class="vehicle-management">
-                <h2><i class="fas fa-cogs"></i> 차량 관리</h2>
-                <div class="vehicle-form">
-                    <h3>새 차량 등록</h3>
-                    <form id="vehicleForm">
-                        <div class="form-group">
-                            <label for="vehicleNumber">차량 번호</label>
-                            <input type="text" id="vehicleNumber" name="vehicleNumber" required placeholder="예: 12가3456">
-                        </div>
-                        <div class="form-group">
-                            <label for="vehicleType">차량 종류</label>
-                            <select id="vehicleType" name="vehicleType" required>
-                                <option value="">선택하세요</option>
-                                <option value="승용차">승용차</option>
-                                <option value="승합차">승합차</option>
-                                <option value="트럭">트럭</option>
-                                <option value="특수차량">특수차량</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="capacity">수용 인원</label>
-                            <input type="number" id="capacity" name="capacity" required min="1" max="50" placeholder="최대 수용 인원">
-                        </div>
-                        <div class="form-group">
-                            <label for="driver">담당 운전자</label>
-                            <input type="text" id="driver" name="driver" required placeholder="운전자 이름">
-                        </div>
-                        <div class="form-group">
-                            <label for="status">상태</label>
-                            <select id="status" name="status" required>
-                                <option value="available">사용 가능</option>
-                                <option value="maintenance">정비 중</option>
-                                <option value="inuse">사용 중</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> 차량 등록
+</div>
+</header>
+<div class="main-content">
+<!-- 차량 관리 섹션 -->
+<section class="vehicle-management">
+<h2><i class="fas fa-cogs"></i> 차량 관리</h2>
+<div class="vehicle-form">
+<h3>새 차량 등록</h3>
+<form id="vehicleForm">
+<div class="form-group">
+<label for="vehicleNumber">차량 번호</label>
+<input id="vehicleNumber" name="vehicleNumber" placeholder="예: 12가3456" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="vehicleType">차량 종류</label>
+<select id="vehicleType" name="vehicleType" required="">
+<option value="">선택하세요</option>
+<option value="승용차">승용차</option>
+<option value="승합차">승합차</option>
+<option value="트럭">트럭</option>
+<option value="특수차량">특수차량</option>
+</select>
+</div>
+<div class="form-group">
+<label for="capacity">수용 인원</label>
+<input id="capacity" max="50" min="1" name="capacity" placeholder="최대 수용 인원" required="" type="number"/>
+</div>
+<div class="form-group">
+<label for="driver">담당 운전자</label>
+<input id="driver" name="driver" placeholder="운전자 이름" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="status">상태</label>
+<select id="status" name="status" required="">
+<option value="available">사용 가능</option>
+<option value="maintenance">정비 중</option>
+<option value="inuse">사용 중</option>
+</select>
+</div>
+<button class="btn btn-primary" type="submit">
+<i class="fas fa-plus"></i> 차량 등록
                         </button>
-                    </form>
-                </div>
-
-                <div class="vehicle-list">
-                    <h3>등록된 차량 목록</h3>
-                    <div class="search-box">
-                        <input type="text" id="vehicleSearch" placeholder="차량 번호로 검색...">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <div id="vehicleList" class="vehicle-grid"></div>
-                </div>
-            </section>
-
-            <!-- 배차 요청 섹션 -->
-            <section class="dispatch-request">
-                <h2><i class="fas fa-calendar-alt"></i> 배차 요청</h2>
-                <div class="request-form">
-                    <h3>새 배차 요청</h3>
-                    <form id="dispatchForm">
-                        <div class="form-group">
-                            <label for="requester">요청자</label>
-                            <input type="text" id="requester" name="requester" required placeholder="요청자 이름">
-                        </div>
-                        <div class="form-group">
-                            <label for="department">부서</label>
-                            <input type="text" id="department" name="department" required placeholder="부서명">
-                        </div>
-                        <div class="form-group">
-                            <label for="purpose">용도</label>
-                            <input type="text" id="purpose" name="purpose" required placeholder="업무 목적">
-                        </div>
-                        <div class="form-group">
-                            <label for="destination">목적지</label>
-                            <input type="text" id="destination" name="destination" required placeholder="목적지 주소">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="startDate">출발 날짜</label>
-                                <input type="date" id="startDate" name="startDate" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="startTime">출발 시간</label>
-                                <input type="time" id="startTime" name="startTime" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="endDate">반납 날짜</label>
-                                <input type="date" id="endDate" name="endDate" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="endTime">반납 시간</label>
-                                <input type="time" id="endTime" name="endTime" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="passengers">탑승 인원</label>
-                            <input type="number" id="passengers" name="passengers" required min="1" max="50" placeholder="탑승 인원 수">
-                        </div>
-                        <div class="form-group">
-                            <label for="priority">우선순위</label>
-                            <select id="priority" name="priority" required>
-                                <option value="low">낮음</option>
-                                <option value="medium" selected>보통</option>
-                                <option value="high">높음</option>
-                                <option value="urgent">긴급</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="notes">특이사항</label>
-                            <textarea id="notes" name="notes" placeholder="추가 요청사항이나 특이사항을 입력하세요"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> 배차 요청
+</form>
+</div>
+<div class="vehicle-list">
+<h3>등록된 차량 목록</h3>
+<div class="search-box">
+<input id="vehicleSearch" placeholder="차량 번호로 검색..." type="text"/>
+<i class="fas fa-search"></i>
+</div>
+<div class="vehicle-grid" id="vehicleList"></div>
+</div>
+</section>
+<!-- 배차 요청 섹션 -->
+<section class="dispatch-request">
+<h2><i class="fas fa-calendar-alt"></i> 배차 요청</h2>
+<div class="request-form">
+<h3>새 배차 요청</h3>
+<form id="dispatchForm">
+<div class="form-group">
+<label for="requester">요청자</label>
+<input id="requester" name="requester" placeholder="요청자 이름" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="department">부서</label>
+<input id="department" name="department" placeholder="부서명" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="purpose">용도</label>
+<input id="purpose" name="purpose" placeholder="업무 목적" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="destination">목적지</label>
+<input id="destination" name="destination" placeholder="목적지 주소" required="" type="text"/>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label for="startDate">출발 날짜</label>
+<input id="startDate" name="startDate" required="" type="date"/>
+</div>
+<div class="form-group">
+<label for="startTime">출발 시간</label>
+<input id="startTime" name="startTime" required="" type="time"/>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label for="endDate">반납 날짜</label>
+<input id="endDate" name="endDate" required="" type="date"/>
+</div>
+<div class="form-group">
+<label for="endTime">반납 시간</label>
+<input id="endTime" name="endTime" required="" type="time"/>
+</div>
+</div>
+<div class="form-group">
+<label for="passengers">탑승 인원</label>
+<input id="passengers" max="50" min="1" name="passengers" placeholder="탑승 인원 수" required="" type="number"/>
+</div>
+<div class="form-group">
+<label for="priority">우선순위</label>
+<select id="priority" name="priority" required="">
+<option value="low">낮음</option>
+<option selected="" value="medium">보통</option>
+<option value="high">높음</option>
+<option value="urgent">긴급</option>
+</select>
+</div>
+<div class="form-group">
+<label for="notes">특이사항</label>
+<textarea id="notes" name="notes" placeholder="추가 요청사항이나 특이사항을 입력하세요"></textarea>
+</div>
+<button class="btn btn-primary" type="submit">
+<i class="fas fa-paper-plane"></i> 배차 요청
                         </button>
-                    </form>
-                </div>
-            </section>
-
-            <!-- 배차 현황 섹션 -->
-            <section class="dispatch-status">
-                <h2><i class="fas fa-list"></i> 배차 현황</h2>
-                <div class="status-filters">
-                    <button class="filter-btn active" data-filter="all">전체</button>
-                    <button class="filter-btn" data-filter="pending">대기 중</button>
-                    <button class="filter-btn" data-filter="approved">승인됨</button>
-                    <button class="filter-btn" data-filter="inprogress">진행 중</button>
-                    <button class="filter-btn" data-filter="completed">완료</button>
-                    <button class="filter-btn" data-filter="cancelled">취소됨</button>
-                </div>
-                <div id="dispatchList" class="dispatch-grid"></div>
-            </section>
-
-            <!-- 통계 대시보드 -->
-            <section class="dashboard">
-                <h2><i class="fas fa-chart-bar"></i> 통계 대시보드</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-car"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalVehicles">0</h3>
-                            <p>전체 차량</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="availableVehicles">0</h3>
-                            <p>사용 가능</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="pendingRequests">0</h3>
-                            <p>대기 요청</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-calendar-check"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="todayDispatches">0</h3>
-                            <p>오늘 배차</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </div>
-
-    <!-- 모달 -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div id="modalBody"></div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
+</form>
+</div>
+</section>
+<!-- 배차 현황 섹션 -->
+<section class="dispatch-status">
+<h2><i class="fas fa-list"></i> 배차 현황</h2>
+<div class="status-filters">
+<button class="filter-btn active" data-filter="all">전체</button>
+<button class="filter-btn" data-filter="pending">대기 중</button>
+<button class="filter-btn" data-filter="approved">승인됨</button>
+<button class="filter-btn" data-filter="inprogress">진행 중</button>
+<button class="filter-btn" data-filter="completed">완료</button>
+<button class="filter-btn" data-filter="cancelled">취소됨</button>
+</div>
+<div class="dispatch-grid" id="dispatchList"></div>
+</section>
+<!-- 통계 대시보드 -->
+<section class="dashboard">
+<h2><i class="fas fa-chart-bar"></i> 통계 대시보드</h2>
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-icon">
+<i class="fas fa-car"></i>
+</div>
+<div class="stat-content">
+<h3 id="totalVehicles">0</h3>
+<p>전체 차량</p>
+</div>
+</div>
+<div class="stat-card">
+<div class="stat-icon">
+<i class="fas fa-check-circle"></i>
+</div>
+<div class="stat-content">
+<h3 id="availableVehicles">0</h3>
+<p>사용 가능</p>
+</div>
+</div>
+<div class="stat-card">
+<div class="stat-icon">
+<i class="fas fa-clock"></i>
+</div>
+<div class="stat-content">
+<h3 id="pendingRequests">0</h3>
+<p>대기 요청</p>
+</div>
+</div>
+<div class="stat-card">
+<div class="stat-icon">
+<i class="fas fa-calendar-check"></i>
+</div>
+<div class="stat-content">
+<h3 id="todayDispatches">0</h3>
+<p>오늘 배차</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- 모달 -->
+<div class="modal" id="modal">
+<div class="modal-content">
+<span class="close">×</span>
+<div id="modalBody"></div>
+</div>
+</div>
+<script src="script.js"></script>
 </body>
 </html> 
