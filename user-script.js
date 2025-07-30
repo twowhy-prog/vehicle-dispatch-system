@@ -98,6 +98,74 @@ function setupMobileOptimizations() {
     });
 }
 
+// 시간 검증 함수
+function validateDateTime(date, time) {
+    const selectedDateTime = new Date(date + 'T' + time);
+    const now = new Date();
+    
+    // 과거 시간인지 확인
+    if (selectedDateTime < now) {
+        return false;
+    }
+    
+    return true;
+}
+
+// 중복 배차 확인 함수
+function checkDuplicateDispatch(vehicle, date, startTime, endTime) {
+    const conflictingDispatches = dispatches.filter(dispatch => {
+        if (dispatch.vehicle !== vehicle || dispatch.status === '거부됨' || dispatch.status === '취소됨') {
+            return false;
+        }
+        
+        const dispatchDate = dispatch.date;
+        const dispatchStart = dispatch.startTime;
+        const dispatchEnd = dispatch.endTime;
+        
+        // 같은 날짜이고 시간이 겹치는지 확인
+        if (dispatchDate === date) {
+            const newStart = new Date(date + 'T' + startTime);
+            const newEnd = new Date(date + 'T' + endTime);
+            const existingStart = new Date(dispatchDate + 'T' + dispatchStart);
+            const existingEnd = new Date(dispatchDate + 'T' + dispatchEnd);
+            
+            return (newStart < existingEnd && newEnd > existingStart);
+        }
+        
+        return false;
+    });
+    
+    return conflictingDispatches.length > 0;
+}
+
+// 배차 신청 시 이메일 알림
+function sendEmailNotification(dispatchData) {
+    const subject = encodeURIComponent('차량 배차 신청 - CPBC');
+    const body = encodeURIComponent(`
+새로운 차량 배차 신청이 접수되었습니다.
+
+신청자: ${dispatchData.applicant}
+차량: ${dispatchData.vehicle}
+사용일: ${dispatchData.date}
+사용시간: ${dispatchData.startTime} ~ ${dispatchData.endTime}
+출발지: ${dispatchData.startLocation}
+도착지: ${dispatchData.endLocation}
+목적: ${dispatchData.purpose}
+승객수: ${dispatchData.passengers}명
+비고: ${dispatchData.remarks || '없음'}
+
+관리자 페이지에서 승인/거절을 처리해주세요.
+    `);
+
+    const mailtoLink = `mailto:taxbillg1@cpbc.co.kr?subject=${subject}&body=${body}`;
+
+    // 이메일 클라이언트 열기
+    window.open(mailtoLink);
+
+    // 알림 표시
+    showNotification('이메일 알림이 준비되었습니다. 이메일 클라이언트가 열리지 않으면 수동으로 관리자에게 연락해주세요.', 'info');
+}
+
 // 섹션 전환
 function showSection(sectionId) {
     // 모든 섹션 숨기기
@@ -226,9 +294,25 @@ function handleDispatchSubmit(event) {
         requestTime: new Date().toISOString()
     };
     
+    // 시간 검증
+    if (!validateDateTime(dispatchData.requestDate, dispatchData.startTime)) {
+        showNotification('현재시간 기준 과거 일시로 배차를 입력할 수 없습니다. 일시를 확인해주세요.', 'error');
+        return;
+    }
+
+    // 중복 배차 확인
+    if (checkDuplicateDispatch(dispatchData.vehicleId, dispatchData.requestDate, dispatchData.startTime, dispatchData.endTime)) {
+        if (!confirm('해당 차량은 이미 배차신청이 되어있습니다. 계속 진행하시겠습니까?')) {
+            return;
+        }
+    }
+
     dispatches.push(dispatchData);
     localStorage.setItem('dispatches', JSON.stringify(dispatches));
     
+    // 이메일 알림 전송
+    sendEmailNotification(dispatchData);
+
     showNotification('배차 신청이 완료되었습니다.', 'success');
     event.target.reset();
     renderDispatches();

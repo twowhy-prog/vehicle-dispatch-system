@@ -76,6 +76,9 @@
                     <h2><i class="fas fa-car"></i> 차량 관리</h2>
                     
                     <div class="section-actions">
+                        <button class="btn btn-secondary" onclick="showVehicleStatusModal()">
+                            <i class="fas fa-info-circle"></i> 차량 상태 확인
+                        </button>
                         <button class="btn btn-primary" onclick="showVehicleModal()">
                             <i class="fas fa-plus"></i> 새 차량 등록
                         </button>
@@ -243,6 +246,67 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- 기사별 운행기록 섹션 -->
+                <section id="driver-operations" class="content-section">
+                    <h2><i class="fas fa-user-tie"></i> 기사별 운행기록</h2>
+                    
+                    <div class="search-section">
+                        <div class="search-box">
+                            <input type="text" id="driverSearchInput" placeholder="기사명을 입력하세요...">
+                            <button class="btn btn-primary" onclick="exportDriverOperations()">
+                                <i class="fas fa-download"></i> 엑셀 내보내기
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="driverOperationsContainer" class="operations-container">
+                        <!-- 기사별 운행기록이 여기에 표시됩니다 -->
+                    </div>
+                </section>
+
+                <!-- 신청자 검색 섹션 -->
+                <section id="applicant-search" class="content-section">
+                    <h2><i class="fas fa-search"></i> 신청자 검색</h2>
+                    
+                    <div class="search-section">
+                        <div class="search-box">
+                            <input type="text" id="applicantSearchInput" placeholder="신청자명을 입력하세요...">
+                        </div>
+                    </div>
+                    
+                    <div id="applicantSearchResults" class="search-results-container">
+                        <!-- 검색 결과가 여기에 표시됩니다 -->
+                    </div>
+                </section>
+
+                <!-- 비밀번호 변경 섹션 -->
+                <section id="password-change" class="content-section">
+                    <h2><i class="fas fa-key"></i> 비밀번호 변경</h2>
+                    
+                    <form id="passwordForm" class="form">
+                        <div class="form-group">
+                            <label for="currentPassword">현재 비밀번호 *</label>
+                            <input type="password" id="currentPassword" name="currentPassword" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newPassword">새 비밀번호 *</label>
+                            <input type="password" id="newPassword" name="newPassword" required minlength="6">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">새 비밀번호 확인 *</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 비밀번호 변경
+                            </button>
+                        </div>
+                    </form>
+                </section>
             </main>
         </div>
     </div>
@@ -311,10 +375,22 @@
             </div>
             <form id="operationForm" class="form">
                 <div class="form-group">
+                    <label for="dispatchSelect">배차 신청 선택</label>
+                    <select id="dispatchSelect" name="dispatchSelect" onchange="onDispatchSelect()">
+                        <option value="">배차 신청 선택</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label for="operationVehicle">차량 선택 *</label>
                     <select id="operationVehicle" name="operationVehicle" required>
                         <option value="">차량을 선택하세요</option>
                     </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operationDriver">기사명 *</label>
+                    <input type="text" id="operationDriver" name="operationDriver" required placeholder="기사명을 입력하세요">
                 </div>
                 
                 <div class="form-group">
@@ -460,6 +536,13 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 차량 상태 팝업 모달 -->
+    <div id="vehicleStatusModal" class="modal">
+        <div class="modal-content">
+            <!-- 차량 상태 정보가 여기에 동적으로 생성됩니다 -->
         </div>
     </div>
 

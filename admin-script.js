@@ -4,7 +4,7 @@ let dispatches = [];
 let operations = [];
 let inspections = [];
 let isLoggedIn = false;
-const ADMIN_PASSWORD = 'admin123'; // 실제 운영 시에는 서버에서 관리해야 함
+let adminPassword = localStorage.getItem('adminPassword') || 'admin123'; // 비밀번호를 localStorage에서 관리
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
@@ -99,6 +99,24 @@ function setupEventListeners() {
     if (inspectionSearchInput) {
         inspectionSearchInput.addEventListener('input', handleInspectionSearch);
     }
+    
+    // 비밀번호 변경 폼
+    const passwordForm = document.getElementById('passwordForm');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', handlePasswordChange);
+    }
+    
+    // 기사별 운행기록 검색
+    const driverSearchInput = document.getElementById('driverSearchInput');
+    if (driverSearchInput) {
+        driverSearchInput.addEventListener('input', handleDriverSearch);
+    }
+    
+    // 신청자 검색
+    const applicantSearchInput = document.getElementById('applicantSearchInput');
+    if (applicantSearchInput) {
+        applicantSearchInput.addEventListener('input', handleApplicantSearch);
+    }
 }
 
 // 모바일 최적화 설정
@@ -154,7 +172,7 @@ function handleLogin(event) {
     
     const password = document.getElementById('adminPassword').value;
     
-    if (password === ADMIN_PASSWORD) {
+    if (password === adminPassword) {
         isLoggedIn = true;
         localStorage.setItem('adminLoggedIn', 'true');
         showNotification('관리자 로그인 성공!', 'success');
@@ -253,7 +271,10 @@ function createVehicleCard(vehicle) {
             ${vehicle.status}
         </div>
         <div class="vehicle-actions">
-            <button class="btn btn-secondary" onclick="editVehicle(${vehicle.id})">
+            <button class="btn btn-secondary" onclick="showVehicleStatusModal(${vehicle.id})">
+                <i class="fas fa-info-circle"></i> 상태 확인
+            </button>
+            <button class="btn btn-primary" onclick="editVehicle(${vehicle.id})">
                 <i class="fas fa-edit"></i> 수정
             </button>
             <button class="btn btn-danger" onclick="deleteVehicle(${vehicle.id})">
@@ -442,10 +463,10 @@ function handleVehicleSubmit(event) {
     showNotification(editId ? '차량이 수정되었습니다.' : '새 차량이 등록되었습니다.', 'success');
 }
 
-// 차량 삭제
+// 차량 삭제 기능 수정
 function deleteVehicle(vehicleId) {
     if (confirm('정말로 이 차량을 삭제하시겠습니까?')) {
-        vehicles = vehicles.filter(v => v.id !== vehicleId);
+        vehicles = vehicles.filter(vehicle => vehicle.id !== vehicleId);
         localStorage.setItem('vehicles', JSON.stringify(vehicles));
         renderVehicles();
         updateDashboard();
@@ -936,4 +957,559 @@ function handleInspectionSearch(event) {
             card.style.display = 'none';
         }
     });
+} 
+
+// 시간 검증 함수
+function validateDateTime(date, time) {
+    const selectedDateTime = new Date(date + 'T' + time);
+    const now = new Date();
+    
+    // 과거 시간인지 확인
+    if (selectedDateTime < now) {
+        return false;
+    }
+    
+    return true;
+}
+
+// 중복 배차 확인 함수
+function checkDuplicateDispatch(vehicle, date, startTime, endTime) {
+    const conflictingDispatches = dispatches.filter(dispatch => {
+        if (dispatch.vehicle !== vehicle || dispatch.status === '거부됨' || dispatch.status === '취소됨') {
+            return false;
+        }
+        
+        const dispatchDate = dispatch.date;
+        const dispatchStart = dispatch.startTime;
+        const dispatchEnd = dispatch.endTime;
+        
+        // 같은 날짜이고 시간이 겹치는지 확인
+        if (dispatchDate === date) {
+            const newStart = new Date(date + 'T' + startTime);
+            const newEnd = new Date(date + 'T' + endTime);
+            const existingStart = new Date(dispatchDate + 'T' + dispatchStart);
+            const existingEnd = new Date(dispatchDate + 'T' + dispatchEnd);
+            
+            return (newStart < existingEnd && newEnd > existingStart);
+        }
+        
+        return false;
+    });
+    
+    return conflictingDispatches.length > 0;
+}
+
+// 배차 승인 시 이메일 알림
+function sendDispatchEmailNotification(dispatch, action) {
+    const subject = encodeURIComponent(`차량 배차 ${action === 'approve' ? '승인' : '거부'} - CPBC`);
+    const body = encodeURIComponent(`
+${action === 'approve' ? '승인' : '거부'}된 차량 배차 신청 정보입니다.
+
+신청자: ${dispatch.applicant}
+차량: ${dispatch.vehicle}
+사용일: ${dispatch.date}
+사용시간: ${dispatch.startTime} ~ ${dispatch.endTime}
+출발지: ${dispatch.startLocation}
+도착지: ${dispatch.endLocation}
+목적: ${dispatch.purpose}
+승객수: ${dispatch.passengers}명
+비고: ${dispatch.remarks || '없음'}
+상태: ${action === 'approve' ? '승인됨' : '거부됨'}
+
+${action === 'approve' ? '승인된 배차는 운행일지에서 확인할 수 있습니다.' : '거부된 배차는 재신청이 필요합니다.'}
+    `);
+
+    const mailtoLink = `mailto:${dispatch.applicant}@cpbc.co.kr?subject=${subject}&body=${body}`;
+    window.open(mailtoLink);
+}
+
+// 배차 승인/거부 함수 수정
+function approveDispatch(dispatchId) {
+    const dispatch = dispatches.find(d => d.id === dispatchId);
+    if (dispatch) {
+        dispatch.status = '승인됨';
+        dispatch.approvedAt = new Date().toISOString();
+        localStorage.setItem('dispatches', JSON.stringify(dispatches));
+        renderDispatches();
+        updateDashboard();
+        
+        // 이메일 알림 전송
+        sendDispatchEmailNotification(dispatch, 'approve');
+        
+        showNotification('배차가 승인되었습니다.', 'success');
+    }
+}
+
+function rejectDispatch(dispatchId) {
+    const dispatch = dispatches.find(d => d.id === dispatchId);
+    if (dispatch) {
+        dispatch.status = '거부됨';
+        dispatch.rejectedAt = new Date().toISOString();
+        localStorage.setItem('dispatches', JSON.stringify(dispatches));
+        renderDispatches();
+        updateDashboard();
+        
+        // 이메일 알림 전송
+        sendDispatchEmailNotification(dispatch, 'reject');
+        
+        showNotification('배차가 거부되었습니다.', 'warning');
+    }
+}
+
+// 운행일지 배차 연동 함수
+function loadApprovedDispatches() {
+    const approvedDispatches = dispatches.filter(d => d.status === '승인됨');
+    const dispatchSelect = document.getElementById('dispatchSelect');
+    
+    if (dispatchSelect) {
+        dispatchSelect.innerHTML = '<option value="">배차 신청 선택</option>';
+        
+        approvedDispatches.forEach(dispatch => {
+            const option = document.createElement('option');
+            option.value = dispatch.id;
+            option.textContent = `${dispatch.applicant} - ${dispatch.vehicle} (${dispatch.date} ${dispatch.startTime})`;
+            dispatchSelect.appendChild(option);
+        });
+    }
+}
+
+// 배차 선택 시 자동 입력
+function onDispatchSelect() {
+    const dispatchSelect = document.getElementById('dispatchSelect');
+    const selectedDispatchId = parseInt(dispatchSelect.value);
+    
+    if (selectedDispatchId) {
+        const dispatch = dispatches.find(d => d.id === selectedDispatchId);
+        if (dispatch) {
+            document.getElementById('operationVehicle').value = dispatch.vehicle;
+            document.getElementById('operationDate').value = dispatch.date;
+            document.getElementById('operationStartTime').value = dispatch.startTime;
+            document.getElementById('operationEndTime').value = dispatch.endTime;
+            document.getElementById('operationStartLocation').value = dispatch.startLocation;
+            document.getElementById('operationEndLocation').value = dispatch.endLocation;
+            document.getElementById('operationPurpose').value = dispatch.purpose;
+        }
+    }
+}
+
+// 엑셀 내보내기 함수 수정 (한글 지원)
+function exportToExcel(timeframe) {
+    const now = new Date();
+    let filteredDispatches = [];
+    
+    switch(timeframe) {
+        case 'daily':
+            filteredDispatches = dispatches.filter(d => {
+                const dispatchDate = new Date(d.date);
+                return dispatchDate.toDateString() === now.toDateString();
+            });
+            break;
+        case 'weekly':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            filteredDispatches = dispatches.filter(d => {
+                const dispatchDate = new Date(d.date);
+                return dispatchDate >= weekAgo;
+            });
+            break;
+        case 'monthly':
+            filteredDispatches = dispatches.filter(d => {
+                const dispatchDate = new Date(d.date);
+                return dispatchDate.getMonth() === now.getMonth() && 
+                       dispatchDate.getFullYear() === now.getFullYear();
+            });
+            break;
+        case 'yearly':
+            filteredDispatches = dispatches.filter(d => {
+                const dispatchDate = new Date(d.date);
+                return dispatchDate.getFullYear() === now.getFullYear();
+            });
+            break;
+        default:
+            filteredDispatches = dispatches;
+    }
+    
+    if (filteredDispatches.length === 0) {
+        showNotification('내보낼 데이터가 없습니다.', 'warning');
+        return;
+    }
+    
+    // CSV 헤더 (한글 지원)
+    let csvContent = '\uFEFF'; // BOM 추가로 한글 지원
+    csvContent += '신청자,차량,사용일,시작시간,종료시간,출발지,도착지,목적,승객수,상태,비고\n';
+    
+    filteredDispatches.forEach(dispatch => {
+        const row = [
+            dispatch.applicant,
+            dispatch.vehicle,
+            dispatch.date,
+            dispatch.startTime,
+            dispatch.endTime,
+            dispatch.startLocation,
+            dispatch.endLocation,
+            dispatch.purpose,
+            dispatch.passengers,
+            dispatch.status,
+            dispatch.remarks || ''
+        ].map(field => `"${field}"`).join(',');
+        
+        csvContent += row + '\n';
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `배차현황_${timeframe}_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// 차량 상태 팝업 함수
+function showVehicleStatusModal(vehicleId = null) {
+    if (vehicleId) {
+        // 특정 차량의 상태 표시
+        displayVehicleStatus(vehicleId);
+    } else {
+        // 차량 선택 모달 표시
+        let modalContent = `
+            <div class="modal-header">
+                <h3>차량 상태 확인</h3>
+                <button class="close-btn" onclick="closeVehicleStatusModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="vehicle-selection">
+                    <h4>확인할 차량을 선택하세요</h4>
+                    <div class="vehicle-list">
+        `;
+        
+        vehicles.forEach(vehicle => {
+            modalContent += `
+                <div class="vehicle-item" onclick="displayVehicleStatus(${vehicle.id})">
+                    <div class="vehicle-info">
+                        <h5>${vehicle.number}</h5>
+                        <p>${vehicle.model} - ${vehicle.type}</p>
+                        <span class="status-badge ${getVehicleStatusClass(vehicle.status)}">${vehicle.status}</span>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            `;
+        });
+        
+        modalContent += `
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        showModal('vehicleStatusModal', modalContent);
+    }
+}
+
+function displayVehicleStatus(vehicleId) {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (!vehicle) return;
+    
+    const vehicleOperations = operations.filter(op => op.vehicle === vehicle.number);
+    const vehicleInspections = inspections.filter(ins => ins.vehicle === vehicle.number);
+    
+    let modalContent = `
+        <div class="modal-header">
+            <h3>${vehicle.number} - ${vehicle.model} 상태 정보</h3>
+            <button class="close-btn" onclick="closeVehicleStatusModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="vehicle-info">
+                <h4>차량 기본 정보</h4>
+                <p><strong>차량번호:</strong> ${vehicle.number}</p>
+                <p><strong>차종:</strong> ${vehicle.type}</p>
+                <p><strong>모델:</strong> ${vehicle.model}</p>
+                <p><strong>수용인원:</strong> ${vehicle.capacity}명</p>
+                <p><strong>현재상태:</strong> <span class="status-badge ${getVehicleStatusClass(vehicle.status)}">${vehicle.status}</span></p>
+            </div>
+            
+            <div class="operation-history">
+                <h4>최근 운행 기록 (최근 5건)</h4>
+                ${vehicleOperations.slice(0, 5).map(op => `
+                    <div class="history-item">
+                        <p><strong>운행일:</strong> ${op.date}</p>
+                        <p><strong>기사:</strong> ${op.driver || '미입력'}</p>
+                        <p><strong>실제주행거리:</strong> ${op.actualKm}km</p>
+                        <p><strong>비고:</strong> ${op.remarks || '없음'}</p>
+                    </div>
+                `).join('') || '<p>운행 기록이 없습니다.</p>'}
+            </div>
+            
+            <div class="inspection-history">
+                <h4>최근 점검 기록 (최근 3건)</h4>
+                ${vehicleInspections.slice(0, 3).map(ins => `
+                    <div class="history-item">
+                        <p><strong>점검일:</strong> ${ins.date}</p>
+                        <p><strong>점검내용:</strong> ${ins.inspectionType}</p>
+                        <p><strong>비용:</strong> ${ins.cost}원</p>
+                        <p><strong>다음점검:</strong> ${ins.nextInspection || '미정'}</p>
+                    </div>
+                `).join('') || '<p>점검 기록이 없습니다.</p>'}
+            </div>
+        </div>
+    `;
+    
+    showModal('vehicleStatusModal', modalContent);
+}
+
+function closeVehicleStatusModal() {
+    const modal = document.getElementById('vehicleStatusModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// 기사별 운행기록 검색
+function handleDriverSearch(event) {
+    const searchTerm = event.target.value.toLowerCase();
+    const driverOperations = operations.filter(op => 
+        op.driver && op.driver.toLowerCase().includes(searchTerm)
+    );
+    
+    renderDriverOperations(driverOperations);
+}
+
+function renderDriverOperations(operations) {
+    const container = document.getElementById('driverOperationsContainer');
+    if (!container) return;
+    
+    if (operations.length === 0) {
+        container.innerHTML = '<p class="no-data">검색된 운행 기록이 없습니다.</p>';
+        return;
+    }
+    
+    let html = '<div class="operations-grid">';
+    operations.forEach(operation => {
+        html += `
+            <div class="operation-card">
+                <div class="operation-header">
+                    <h4>${operation.vehicle}</h4>
+                    <span class="date">${operation.date}</span>
+                </div>
+                <div class="operation-details">
+                    <p><strong>기사:</strong> ${operation.driver}</p>
+                    <p><strong>실제주행거리:</strong> ${operation.actualKm}km</p>
+                    <p><strong>비고:</strong> ${operation.remarks || '없음'}</p>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+// 기사별 운행기록 엑셀 내보내기
+function exportDriverOperations() {
+    const driverSearchInput = document.getElementById('driverSearchInput');
+    const searchTerm = driverSearchInput ? driverSearchInput.value.toLowerCase() : '';
+    
+    let filteredOperations = operations;
+    if (searchTerm) {
+        filteredOperations = operations.filter(op => 
+            op.driver && op.driver.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    if (filteredOperations.length === 0) {
+        showNotification('내보낼 데이터가 없습니다.', 'warning');
+        return;
+    }
+    
+    let csvContent = '\uFEFF'; // BOM 추가로 한글 지원
+    csvContent += '기사명,차량번호,운행일,실제주행거리,비고\n';
+    
+    filteredOperations.forEach(operation => {
+        const row = [
+            operation.driver || '',
+            operation.vehicle,
+            operation.date,
+            operation.actualKm,
+            operation.remarks || ''
+        ].map(field => `"${field}"`).join(',');
+        
+        csvContent += row + '\n';
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `기사별운행기록_${new Date().getFullYear()}${(new Date().getMonth()+1).toString().padStart(2,'0')}${new Date().getDate().toString().padStart(2,'0')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// 비밀번호 변경 함수
+function handlePasswordChange(event) {
+    event.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (currentPassword !== adminPassword) {
+        showNotification('현재 비밀번호가 올바르지 않습니다.', 'error');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showNotification('새 비밀번호가 일치하지 않습니다.', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showNotification('새 비밀번호는 6자 이상이어야 합니다.', 'error');
+        return;
+    }
+    
+    adminPassword = newPassword;
+    localStorage.setItem('adminPassword', newPassword);
+    
+    document.getElementById('passwordForm').reset();
+    showNotification('비밀번호가 성공적으로 변경되었습니다.', 'success');
+}
+
+// 신청자 검색 함수
+function handleApplicantSearch(event) {
+    const searchTerm = event.target.value.toLowerCase();
+    const applicantDispatches = dispatches.filter(d => 
+        d.applicant && d.applicant.toLowerCase().includes(searchTerm)
+    );
+    
+    const applicantOperations = operations.filter(op => {
+        const relatedDispatch = dispatches.find(d => 
+            d.vehicle === op.vehicle && 
+            d.date === op.date && 
+            d.status === '승인됨'
+        );
+        return relatedDispatch && relatedDispatch.applicant && 
+               relatedDispatch.applicant.toLowerCase().includes(searchTerm);
+    });
+    
+    renderApplicantSearchResults(applicantDispatches, applicantOperations);
+}
+
+function renderApplicantSearchResults(dispatches, operations) {
+    const container = document.getElementById('applicantSearchResults');
+    if (!container) return;
+    
+    let html = '<div class="search-results">';
+    
+    if (dispatches.length === 0 && operations.length === 0) {
+        html += '<p class="no-data">검색된 결과가 없습니다.</p>';
+    } else {
+        if (dispatches.length > 0) {
+            html += '<h4>배차 신청 내역</h4>';
+            dispatches.forEach(dispatch => {
+                html += `
+                    <div class="search-result-item">
+                        <p><strong>신청자:</strong> ${dispatch.applicant}</p>
+                        <p><strong>차량:</strong> ${dispatch.vehicle}</p>
+                        <p><strong>사용일:</strong> ${dispatch.date}</p>
+                        <p><strong>상태:</strong> <span class="status-badge ${getStatusClass(dispatch.status)}">${dispatch.status}</span></p>
+                    </div>
+                `;
+            });
+        }
+        
+        if (operations.length > 0) {
+            html += '<h4>운행 내역</h4>';
+            operations.forEach(operation => {
+                html += `
+                    <div class="search-result-item">
+                        <p><strong>차량:</strong> ${operation.vehicle}</p>
+                        <p><strong>운행일:</strong> ${operation.date}</p>
+                        <p><strong>기사:</strong> ${operation.driver || '미입력'}</p>
+                        <p><strong>실제주행거리:</strong> ${operation.actualKm}km</p>
+                    </div>
+                `;
+            });
+        }
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+} 
+
+// 모달 표시 함수
+function showModal(modalId, content) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.innerHTML = content;
+        }
+        modal.style.display = 'block';
+    }
+}
+
+// 운행일지 모달 표시 시 배차 연동 초기화
+function showOperationModal(operationId = null) {
+    const modal = document.getElementById('operationModal');
+    if (modal) {
+        // 배차 신청 목록 로드
+        loadApprovedDispatches();
+        
+        // 차량 목록 로드
+        const vehicleSelect = document.getElementById('operationVehicle');
+        if (vehicleSelect) {
+            vehicleSelect.innerHTML = '<option value="">차량을 선택하세요</option>';
+            vehicles.forEach(vehicle => {
+                const option = document.createElement('option');
+                option.value = vehicle.number;
+                option.textContent = `${vehicle.number} - ${vehicle.model}`;
+                vehicleSelect.appendChild(option);
+            });
+        }
+        
+        if (operationId) {
+            // 수정 모드
+            const operation = operations.find(op => op.id === operationId);
+            if (operation) {
+                document.getElementById('operationModalTitle').textContent = '운행 기록 수정';
+                document.getElementById('operationVehicle').value = operation.vehicle;
+                document.getElementById('operationDate').value = operation.date;
+                document.getElementById('operationStartTime').value = operation.startTime;
+                document.getElementById('operationEndTime').value = operation.endTime;
+                document.getElementById('operationStartLocation').value = operation.startLocation;
+                document.getElementById('operationEndLocation').value = operation.endLocation;
+                document.getElementById('operationPurpose').value = operation.purpose;
+                document.getElementById('operationDriver').value = operation.driver || '';
+                document.getElementById('operationActualKm').value = operation.actualKm;
+                document.getElementById('operationRemarks').value = operation.remarks || '';
+                document.getElementById('operationStatus').value = operation.status;
+                
+                // 숨겨진 필드에 ID 저장
+                let hiddenId = document.getElementById('operationId');
+                if (!hiddenId) {
+                    hiddenId = document.createElement('input');
+                    hiddenId.type = 'hidden';
+                    hiddenId.id = 'operationId';
+                    document.getElementById('operationForm').appendChild(hiddenId);
+                }
+                hiddenId.value = operationId;
+            }
+        } else {
+            // 새 등록 모드
+            document.getElementById('operationModalTitle').textContent = '운행 기록 추가';
+            document.getElementById('operationForm').reset();
+            
+            // 숨겨진 필드 제거
+            const hiddenId = document.getElementById('operationId');
+            if (hiddenId) {
+                hiddenId.remove();
+            }
+        }
+        
+        modal.style.display = 'block';
+    }
 } 

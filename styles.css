@@ -1072,3 +1072,318 @@ textarea {
         font-size: 0.9rem;
     }
 } 
+
+/* 차량 상태 팝업 스타일 */
+.vehicle-info {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.vehicle-info h4 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.vehicle-info p {
+    margin: 0.25rem 0;
+    color: #555;
+}
+
+.operation-history,
+.inspection-history {
+    margin-top: 1.5rem;
+}
+
+.operation-history h4,
+.inspection-history h4 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+}
+
+.history-item {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.history-item p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+/* 기사별 운행기록 스타일 */
+.operations-container {
+    margin-top: 1rem;
+}
+
+.operations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.operation-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.operation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.operation-header h4 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.operation-header .date {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.operation-details p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* 신청자 검색 스타일 */
+.search-results-container {
+    margin-top: 1rem;
+}
+
+.search-results {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-results h4 {
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #3498db;
+}
+
+.search-result-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.search-result-item p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.no-data {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+    padding: 2rem;
+}
+
+/* 비밀번호 변경 스타일 */
+#password-change .form {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+#password-change .form-group {
+    margin-bottom: 1.5rem;
+}
+
+#password-change input[type="password"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+#password-change input[type="password"]:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* 헤더 액션 버튼 스타일 */
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.header-actions .btn {
+    margin: 0;
+}
+
+/* 배차 선택 스타일 */
+#dispatchSelect {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    background: #fff;
+}
+
+#dispatchSelect:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* 모바일 반응형 스타일 */
+@media (max-width: 768px) {
+    .header-actions {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+    
+    .operations-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .search-results {
+        padding: 0.75rem;
+    }
+    
+    .history-item {
+        padding: 0.5rem;
+    }
+    
+    .operation-card {
+        padding: 0.75rem;
+    }
+    
+    .operation-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
+
+/* 알림 스타일 개선 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 500;
+    z-index: 1000;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.notification.warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+}
+
+.notification.info {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+} 
+
+/* 차량 선택 스타일 */
+.vehicle-selection {
+    padding: 1rem 0;
+}
+
+.vehicle-selection h4 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.vehicle-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.vehicle-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.vehicle-item:hover {
+    background: #f8f9fa;
+    border-color: #3498db;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.vehicle-item .vehicle-info h5 {
+    margin: 0 0 0.25rem 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.vehicle-item .vehicle-info p {
+    margin: 0.25rem 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.vehicle-item .status-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.vehicle-item i {
+    color: #bdc3c7;
+    font-size: 1.2rem;
+    transition: color 0.2s ease;
+}
+
+.vehicle-item:hover i {
+    color: #3498db;
+} 
