@@ -158,7 +158,7 @@ function sendEmailNotification(dispatchData) {
     `);
 
 
-    // 이메일 클라이언트 열기
+    // 이메일 전송은 EmailJS를 통해 자동 처리됨
 
     // 알림 표시
     showNotification('이메일 알림이 준비되었습니다. 이메일 클라이언트가 열리지 않으면 수동으로 관리자에게 연락해주세요.', 'info');
@@ -254,13 +254,15 @@ function createDispatchCard(dispatch) {
 
 // 우선순위 클래스 반환
 function getPriorityClass(priority) {
-    switch(priority) {
-        case '보통': return 'low';
-        case '긴급': return 'medium';
-        case '매우긴급': return 'high';
-        default: return 'low';
+    switch (priority) {
+        case "low": return "low";
+        case "medium": return "medium";
+        case "high": return "high";
+        case "urgent": return "urgent";
+        default: return "low";
     }
 }
+
 
 // 상태 클래스 반환
 function getStatusClass(status) {
