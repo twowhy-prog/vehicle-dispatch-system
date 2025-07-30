@@ -26,7 +26,7 @@
 <button class="btn btn-primary" type="submit">
 <i class="fas fa-sign-in-alt"></i> 로그인
                     </button>
-<button class="btn btn-secondary" onclick="location.href='user.html'" type="button">
+<button class="btn btn-secondary" onclick="location.href='index.html'" type="button">
 <i class="fas fa-arrow-left"></i> 사용자 페이지로
                     </button>
 </div>
@@ -42,7 +42,7 @@
 <button class="btn btn-secondary" onclick="logout()">
 <i class="fas fa-sign-out-alt"></i> 로그아웃
                 </button>
-<button class="btn btn-secondary" onclick="location.href='user.html'">
+<button class="btn btn-secondary" onclick="location.href='index.html'">
 <i class="fas fa-users"></i> 사용자 페이지
                 </button>
 </div>
@@ -92,6 +92,7 @@
 <h2><i class="fas fa-list"></i> 배차 관리</h2>
 <div class="search-filter">
 <input class="search-input" id="dispatchSearchInput" placeholder="검색어를 입력하세요..." type="text"/>
+<input type="month" id="dispatchMonth" />
 <div class="status-filters">
 <button class="filter-btn active" data-status="all">전체</button>
 <button class="filter-btn" data-status="대기중">대기중</button>

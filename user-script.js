@@ -21,28 +21,7 @@ function loadData() {
     vehicles = JSON.parse(localStorage.getItem('vehicles')) || [];
     dispatches = JSON.parse(localStorage.getItem('dispatches')) || [];
     
-    // 샘플 데이터가 없으면 기본 차량 추가
-    if (vehicles.length === 0) {
-        vehicles = [
-            {
-                id: 1,
-                number: '12가3456',
-                type: '승용차',
-                model: '현대 아반떼',
-                capacity: 5,
-                status: '사용가능'
-            },
-            {
-                id: 2,
-                number: '34나5678',
-                type: '승합차',
-                model: '기아 카니발',
-                capacity: 9,
-                status: '사용가능'
-            }
-        ];
-        localStorage.setItem('vehicles', JSON.stringify(vehicles));
-    }
+    // 저장된 데이터가 없으면 빈 배열 유지
 }
 
 // 이벤트 리스너 설정
@@ -112,23 +91,23 @@ function validateDateTime(date, time) {
 }
 
 // 중복 배차 확인 함수
-function checkDuplicateDispatch(vehicle, date, startTime, endTime) {
+function checkDuplicateDispatch(vehicle, startDate, startTime, endDate, endTime) {
     const conflictingDispatches = dispatches.filter(dispatch => {
         if (dispatch.vehicle !== vehicle || dispatch.status === '거부됨' || dispatch.status === '취소됨') {
             return false;
         }
-        
-        const dispatchDate = dispatch.date;
+
+        const dispatchStartDate = dispatch.startDate;
         const dispatchStart = dispatch.startTime;
         const dispatchEnd = dispatch.endTime;
-        
+
         // 같은 날짜이고 시간이 겹치는지 확인
-        if (dispatchDate === date) {
-            const newStart = new Date(date + 'T' + startTime);
-            const newEnd = new Date(date + 'T' + endTime);
-            const existingStart = new Date(dispatchDate + 'T' + dispatchStart);
-            const existingEnd = new Date(dispatchDate + 'T' + dispatchEnd);
-            
+        if (dispatchStartDate === startDate && dispatch.endDate === endDate) {
+            const newStart = new Date(startDate + 'T' + startTime);
+            const newEnd = new Date(endDate + 'T' + endTime);
+            const existingStart = new Date(dispatchStartDate + 'T' + dispatchStart);
+            const existingEnd = new Date(dispatch.endDate + 'T' + dispatchEnd);
+
             return (newStart < existingEnd && newEnd > existingStart);
         }
         
@@ -146,8 +125,7 @@ function sendEmailNotification(dispatchData) {
 
 신청자: ${dispatchData.applicant}
 차량: ${dispatchData.vehicle}
-사용일: ${dispatchData.date}
-사용시간: ${dispatchData.startTime} ~ ${dispatchData.endTime}
+사용기간: ${dispatchData.startDate} ${dispatchData.startTime} ~ ${dispatchData.endDate} ${dispatchData.endTime}
 출발지: ${dispatchData.startLocation}
 도착지: ${dispatchData.endLocation}
 목적: ${dispatchData.purpose}
@@ -158,7 +136,7 @@ function sendEmailNotification(dispatchData) {
     `);
 
 
-    // 이메일 클라이언트 열기
+    // 이메일 전송은 EmailJS를 통해 자동 처리됨
 
     // 알림 표시
     showNotification('이메일 알림이 준비되었습니다. 이메일 클라이언트가 열리지 않으면 수동으로 관리자에게 연락해주세요.', 'info');
@@ -239,8 +217,8 @@ function createDispatchCard(dispatch) {
         </div>
         <div class="dispatch-info">
             <span><i class="fas fa-car"></i> ${vehicleInfo}</span>
-            <span><i class="fas fa-calendar"></i> ${dispatch.requestDate}</span>
-            <span><i class="fas fa-clock"></i> ${dispatch.startTime} - ${dispatch.endTime}</span>
+            <span><i class="fas fa-calendar"></i> ${dispatch.startDate} ${dispatch.startTime}</span>
+            <span><i class="fas fa-calendar"></i> ${dispatch.endDate} ${dispatch.endTime}</span>
             <span><i class="fas fa-map-marker-alt"></i> ${dispatch.destination}</span>
             <span><i class="fas fa-comment"></i> ${dispatch.purpose}</span>
         </div>
@@ -254,13 +232,14 @@ function createDispatchCard(dispatch) {
 
 // 우선순위 클래스 반환
 function getPriorityClass(priority) {
-    switch(priority) {
+    switch (priority) {
         case '보통': return 'low';
         case '긴급': return 'medium';
         case '매우긴급': return 'high';
         default: return 'low';
     }
 }
+
 
 // 상태 클래스 반환
 function getStatusClass(status) {
@@ -282,8 +261,9 @@ function handleDispatchSubmit(event) {
         requester: formData.get('requester'),
         department: formData.get('department'),
         vehicleId: formData.get('vehicleSelect'),
-        requestDate: formData.get('requestDate'),
+        startDate: formData.get('startDate'),
         startTime: formData.get('startTime'),
+        endDate: formData.get('endDate'),
         endTime: formData.get('endTime'),
         destination: formData.get('destination'),
         purpose: formData.get('purpose'),
@@ -293,13 +273,13 @@ function handleDispatchSubmit(event) {
     };
     
     // 시간 검증
-    if (!validateDateTime(dispatchData.requestDate, dispatchData.startTime)) {
+    if (!validateDateTime(dispatchData.startDate, dispatchData.startTime)) {
         showNotification('현재시간 기준 과거 일시로 배차를 입력할 수 없습니다. 일시를 확인해주세요.', 'error');
         return;
     }
 
     // 중복 배차 확인
-    if (checkDuplicateDispatch(dispatchData.vehicleId, dispatchData.requestDate, dispatchData.startTime, dispatchData.endTime)) {
+    if (checkDuplicateDispatch(dispatchData.vehicleId, dispatchData.startDate, dispatchData.startTime, dispatchData.endDate, dispatchData.endTime)) {
         if (!confirm('해당 차량은 이미 배차신청이 되어있습니다. 계속 진행하시겠습니까?')) {
             return;
         }
@@ -371,29 +351,5 @@ function showNotification(message, type = 'info') {
     }, 3000);
 } 
 
-// EmailJS 초기화
-(function(){
-    emailjs.init("YOUR_USER_ID"); // 사용자 ID로 교체
-})();
-
-
-// 배차 신청 시 관리자에게 이메일 전송
-emailjs.send("gmail_service", "request_template", {
-    requester_name: formData.get("requester"),
-    requester_email: formData.get("email"),
-    message: "새로운 배차 신청이 접수되었습니다."
-});
-
-
-// EmailJS 초기화
-(function() {
-    emailjs.init("tv9jg-W2_pe0bM_0S");
-})();
-
-
-// 배차 신청 시 관리자에게 이메일 전송
-emailjs.send("twowhy", "template_flxeghe", {
-    requester_name: formData.get("requester"),
-    requester_email: formData.get("email"),
-    message: "배차 신청이 접수되었습니다."
-});
+// EmailJS 초기화 예제 코드는 삭제되었습니다. 실제 프로젝트에서는
+// emailjs.init(...) 및 emailjs.send(...) 호출을 적절히 구성하세요.

@@ -1,6 +1,7 @@
 // 전역 변수
 let vehicles = [];
 let dispatches = [];
+let currentMonth = '';
 let operations = [];
 let inspections = [];
 let isLoggedIn = false;
@@ -21,28 +22,7 @@ function loadData() {
     operations = JSON.parse(localStorage.getItem('operations')) || [];
     inspections = JSON.parse(localStorage.getItem('inspections')) || [];
     
-    // 샘플 데이터가 없으면 기본 차량 추가
-    if (vehicles.length === 0) {
-        vehicles = [
-            {
-                id: 1,
-                number: '12가3456',
-                type: '승용차',
-                model: '현대 아반떼',
-                capacity: 5,
-                status: '사용가능'
-            },
-            {
-                id: 2,
-                number: '34나5678',
-                type: '승합차',
-                model: '기아 카니발',
-                capacity: 9,
-                status: '사용가능'
-            }
-        ];
-        localStorage.setItem('vehicles', JSON.stringify(vehicles));
-    }
+    // 저장된 데이터가 없으면 빈 배열 유지
 }
 
 // 이벤트 리스너 설정
@@ -68,6 +48,14 @@ function setupEventListeners() {
     const dispatchSearchInput = document.getElementById('dispatchSearchInput');
     if (dispatchSearchInput) {
         dispatchSearchInput.addEventListener('input', handleDispatchSearch);
+    }
+
+    const dispatchMonth = document.getElementById('dispatchMonth');
+    if (dispatchMonth) {
+        dispatchMonth.addEventListener('change', function(e) {
+            currentMonth = e.target.value;
+            renderDispatches();
+        });
     }
     
     // 상태 필터
@@ -300,10 +288,14 @@ function getVehicleStatusClass(status) {
 function renderDispatches() {
     const dispatchList = document.getElementById('adminDispatchList');
     if (!dispatchList) return;
-    
+
     dispatchList.innerHTML = '';
-    
-    dispatches.forEach(dispatch => {
+    let filtered = dispatches;
+    if (currentMonth) {
+        filtered = dispatches.filter(d => (d.startDate || '').startsWith(currentMonth));
+    }
+
+    filtered.forEach(dispatch => {
         const dispatchCard = createAdminDispatchCard(dispatch);
         dispatchList.appendChild(dispatchCard);
     });
@@ -328,8 +320,8 @@ function createAdminDispatchCard(dispatch) {
         </div>
         <div class="dispatch-info">
             <span><i class="fas fa-car"></i> ${vehicleInfo}</span>
-            <span><i class="fas fa-calendar"></i> ${dispatch.requestDate}</span>
-            <span><i class="fas fa-clock"></i> ${dispatch.startTime} - ${dispatch.endTime}</span>
+            <span><i class="fas fa-calendar"></i> ${dispatch.startDate} ${dispatch.startTime}</span>
+            <span><i class="fas fa-calendar"></i> ${dispatch.endDate} ${dispatch.endTime}</span>
             <span><i class="fas fa-map-marker-alt"></i> ${dispatch.destination}</span>
             <span><i class="fas fa-comment"></i> ${dispatch.purpose}</span>
         </div>
@@ -345,6 +337,9 @@ function createAdminDispatchCard(dispatch) {
                     <i class="fas fa-times"></i> 거부
                 </button>
             ` : ''}
+            <button class="btn btn-danger" onclick="deleteDispatch(${dispatch.id})">
+                <i class="fas fa-trash"></i> 삭제
+            </button>
         </div>
     `;
     
@@ -392,6 +387,16 @@ function rejectDispatch(dispatchId) {
         renderDispatches();
         updateDashboard();
         showNotification('배차가 거부되었습니다.', 'error');
+    }
+}
+
+function deleteDispatch(dispatchId) {
+    if (confirm('정말로 이 배차 기록을 삭제하시겠습니까?')) {
+        dispatches = dispatches.filter(d => d.id != dispatchId);
+        localStorage.setItem('dispatches', JSON.stringify(dispatches));
+        renderDispatches();
+        updateDashboard();
+        showNotification('배차 기록이 삭제되었습니다.', 'success');
     }
 }
 
@@ -465,11 +470,8 @@ function handleVehicleSubmit(event) {
 
 // 차량 삭제 기능 수정
 function deleteVehicle(vehicleId) {
-    // vehicleId를 숫자로 변환
-    const id = parseInt(vehicleId);
-    
     if (confirm('정말로 이 차량을 삭제하시겠습니까?')) {
-        vehicles = vehicles.filter(vehicle => vehicle.id !== id);
+        vehicles = vehicles.filter(vehicle => vehicle.id != vehicleId);
         localStorage.setItem('vehicles', JSON.stringify(vehicles));
         renderVehicles();
         updateDashboard();
@@ -553,13 +555,13 @@ function exportToExcel(timeframe) {
     switch(timeframe) {
         case 'daily':
             const today = now.toISOString().split('T')[0];
-            filteredDispatches = dispatches.filter(d => d.requestDate === today);
+            filteredDispatches = dispatches.filter(d => d.startDate === today);
             break;
         case 'weekly':
             const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
             const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
             filteredDispatches = dispatches.filter(d => {
-                const dispatchDate = new Date(d.requestDate);
+                const dispatchDate = new Date(d.startDate);
                 return dispatchDate >= weekStart && dispatchDate <= weekEnd;
             });
             break;
@@ -567,7 +569,7 @@ function exportToExcel(timeframe) {
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
             const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             filteredDispatches = dispatches.filter(d => {
-                const dispatchDate = new Date(d.requestDate);
+                const dispatchDate = new Date(d.startDate);
                 return dispatchDate >= monthStart && dispatchDate <= monthEnd;
             });
             break;
@@ -575,7 +577,7 @@ function exportToExcel(timeframe) {
             const yearStart = new Date(now.getFullYear(), 0, 1);
             const yearEnd = new Date(now.getFullYear(), 11, 31);
             filteredDispatches = dispatches.filter(d => {
-                const dispatchDate = new Date(d.requestDate);
+                const dispatchDate = new Date(d.startDate);
                 return dispatchDate >= yearStart && dispatchDate <= yearEnd;
             });
             break;
@@ -584,13 +586,13 @@ function exportToExcel(timeframe) {
     }
     
     // CSV 데이터 생성
-    let csvContent = '요청자,부서,차량,사용날짜,출발시간,도착시간,목적지,사용목적,우선순위,상태\n';
+    let csvContent = '요청자,부서,차량,출발일자,출발시간,도착일자,도착시간,목적지,사용목적,우선순위,상태\n';
     
     filteredDispatches.forEach(dispatch => {
         const vehicle = vehicles.find(v => v.id == dispatch.vehicleId);
         const vehicleInfo = vehicle ? `${vehicle.number} (${vehicle.type})` : '차량 정보 없음';
         
-        csvContent += `"${dispatch.requester}","${dispatch.department}","${vehicleInfo}","${dispatch.requestDate}","${dispatch.startTime}","${dispatch.endTime}","${dispatch.destination}","${dispatch.purpose}","${dispatch.priority}","${dispatch.status}"\n`;
+        csvContent += `"${dispatch.requester}","${dispatch.department}","${vehicleInfo}","${dispatch.startDate}","${dispatch.startTime}","${dispatch.endDate}","${dispatch.endTime}","${dispatch.destination}","${dispatch.purpose}","${dispatch.priority}","${dispatch.status}"\n`;
     });
     
     // 파일 다운로드
