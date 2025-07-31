@@ -96,7 +96,8 @@ app.post('/restore/:date', async (req, res) => {
 });
 
 // 서버 시작
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Network access: http://[YOUR_IP]:${PORT}`);
     console.log(`Data directory: ${DATA_DIR}`);
 }); 
