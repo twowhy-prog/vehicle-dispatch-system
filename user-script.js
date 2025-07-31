@@ -233,10 +233,16 @@ function createDispatchCard(dispatch) {
 // 우선순위 클래스 반환
 function getPriorityClass(priority) {
     switch (priority) {
-        case '보통': return 'low';
-        case '긴급': return 'medium';
-        case '매우긴급': return 'high';
-        default: return 'low';
+        case 'low':
+            return 'low';
+        case 'medium':
+            return 'medium';
+        case 'high':
+            return 'high';
+        case 'urgent':
+            return 'urgent';
+        default:
+            return 'low';
     }
 }
 
