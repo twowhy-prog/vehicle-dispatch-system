@@ -8,20 +8,33 @@ let adminPassword = localStorage.getItem('adminPassword') || 'admin123'; // 비�
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    loadData();
+    initializeApp();
+});
+
+// 앱 초기화
+async function initializeApp() {
+    await loadData();
     setupEventListeners();
     setupMobileOptimizations();
     checkLoginStatus();
-});
+    renderAllData();
+}
 
 // 데이터 로드
-function loadData() {
-    vehicles = JSON.parse(localStorage.getItem('vehicles')) || [];
-    dispatches = JSON.parse(localStorage.getItem('dispatches')) || [];
-    operations = JSON.parse(localStorage.getItem('operations')) || [];
-    inspections = JSON.parse(localStorage.getItem('inspections')) || [];
-    
-    // 저장된 데이터가 없으면 빈 배열 유지
+async function loadData() {
+    try {
+        vehicles = await dataManager.loadData('vehicles');
+        dispatches = await dataManager.loadData('dispatches');
+        operations = await dataManager.loadData('operations');
+        inspections = await dataManager.loadData('inspections');
+    } catch (error) {
+        console.error('Error loading data:', error);
+        // localStorage에서 복원 시도
+        vehicles = dataManager.restoreFromLocalStorage('vehicles');
+        dispatches = dataManager.restoreFromLocalStorage('dispatches');
+        operations = dataManager.restoreFromLocalStorage('operations');
+        inspections = dataManager.restoreFromLocalStorage('inspections');
+    }
 }
 
 // 이벤트 리스너 설정
@@ -465,8 +478,8 @@ function editVehicle(vehicleId) {
 function updateDashboard() {
     document.getElementById('totalVehicles').textContent = vehicles.length;
     document.getElementById('pendingRequests').textContent = dispatches.filter(d => d.status === '대기중').length;
-    document.getElementById('approvedRequests').textContent = dispatches.filter(d => d.status === '승인').length;
-    document.getElementById('rejectedRequests').textContent = dispatches.filter(d => d.status === '거부').length;
+    document.getElementById('approvedRequests').textContent = dispatches.filter(d => d.status === '승인' || d.status === '승인됨').length;
+    document.getElementById('rejectedRequests').textContent = dispatches.filter(d => d.status === '거부' || d.status === '거부됨').length;
 }
 
 // 검색 처리
@@ -501,22 +514,57 @@ function handleDispatchSearch(event) {
 // 필터 처리
 function handleFilter(event) {
     const status = event.target.dataset.status;
+    const period = event.target.dataset.period;
     
-    // 모든 필터 버튼 비활성화
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    // 같은 그룹의 모든 필터 버튼 비활성화
+    if (status) {
+        document.querySelectorAll('[data-status]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+    }
     
-    // 클릭된 버튼 활성화
-    event.target.classList.add('active');
+    if (period) {
+        document.querySelectorAll('[data-period]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+    }
+    
+    // 현재 활성화된 필터들 가져오기
+    const activeStatus = document.querySelector('[data-status].active').dataset.status;
+    const activePeriod = document.querySelector('[data-period].active').dataset.period;
     
     // 배차 카드 필터링
     const dispatchCards = document.querySelectorAll('.dispatch-card');
     dispatchCards.forEach(card => {
         const statusElement = card.querySelector('.dispatch-status');
         const cardStatus = statusElement ? statusElement.textContent.trim() : '';
+        const cardDate = card.querySelector('.dispatch-info span:nth-child(2)').textContent.split(' ')[1]; // 날짜 추출
         
-        if (status === 'all' || cardStatus === status) {
+        let statusMatch = activeStatus === 'all' || cardStatus === activeStatus;
+        let periodMatch = true;
+        
+        // 기간 필터링
+        if (activePeriod !== 'all') {
+            const now = new Date();
+            const dispatchDate = new Date(cardDate);
+            
+            switch(activePeriod) {
+                case 'daily':
+                    periodMatch = dispatchDate.toDateString() === now.toDateString();
+                    break;
+                case 'monthly':
+                    periodMatch = dispatchDate.getMonth() === now.getMonth() && 
+                                 dispatchDate.getFullYear() === now.getFullYear();
+                    break;
+                case 'yearly':
+                    periodMatch = dispatchDate.getFullYear() === now.getFullYear();
+                    break;
+            }
+        }
+        
+        if (statusMatch && periodMatch) {
             card.style.display = 'block';
         } else {
             card.style.display = 'none';
@@ -638,7 +686,6 @@ function createOperationCard(operation) {
             <p><strong>출발지:</strong> ${operation.startLocation}</p>
             <p><strong>도착지:</strong> ${operation.endLocation}</p>
             <p><strong>실제 주행거리:</strong> ${operation.actualKm}km</p>
-            ${operation.googleKm ? `<p><strong>구글맵 거리:</strong> ${operation.googleKm}km</p>` : ''}
         </div>
         ${operation.remarks ? `
         <div class="operation-remarks">
@@ -684,7 +731,6 @@ function showOperationModal(operationId = null) {
             form.elements.operationStartTime.value = operation.startTime;
             form.elements.operationEndTime.value = operation.endTime;
             form.elements.operationActualKm.value = operation.actualKm;
-            form.elements.operationGoogleKm.value = operation.googleKm || '';
             form.elements.operationPurpose.value = operation.purpose || '';
             form.elements.operationRemarks.value = operation.remarks || '';
             form.elements.operationStatus.value = operation.status;
@@ -718,7 +764,6 @@ function handleOperationSubmit(event) {
         startTime: formData.get('operationStartTime'),
         endTime: formData.get('operationEndTime'),
         actualKm: parseFloat(formData.get('operationActualKm')),
-        googleKm: formData.get('operationGoogleKm') ? parseFloat(formData.get('operationGoogleKm')) : null,
         purpose: formData.get('operationPurpose'),
         remarks: formData.get('operationRemarks'),
         status: formData.get('operationStatus')
@@ -1038,16 +1083,19 @@ function rejectDispatch(dispatchId) {
 
 // 운행일지 배차 연동 함수
 function loadApprovedDispatches() {
-    const approvedDispatches = dispatches.filter(d => d.status === '승인됨');
+    const approvedDispatches = dispatches.filter(d => d.status === '승인' || d.status === '승인됨');
     const dispatchSelect = document.getElementById('dispatchSelect');
     
     if (dispatchSelect) {
         dispatchSelect.innerHTML = '<option value="">배차 신청 선택</option>';
         
         approvedDispatches.forEach(dispatch => {
+            const vehicle = vehicles.find(v => v.id == dispatch.vehicleId);
+            const vehicleInfo = vehicle ? vehicle.number : '차량 정보 없음';
+            
             const option = document.createElement('option');
             option.value = dispatch.id;
-            option.textContent = `${dispatch.applicant} - ${dispatch.vehicle} (${dispatch.date} ${dispatch.startTime})`;
+            option.textContent = `${dispatch.requester} - ${vehicleInfo} (${dispatch.requestDate} ${dispatch.startTime})`;
             dispatchSelect.appendChild(option);
         });
     }
@@ -1061,12 +1109,15 @@ function onDispatchSelect() {
     if (selectedDispatchId) {
         const dispatch = dispatches.find(d => d.id === selectedDispatchId);
         if (dispatch) {
-            document.getElementById('operationVehicle').value = dispatch.vehicle;
-            document.getElementById('operationDate').value = dispatch.date;
+            const vehicle = vehicles.find(v => v.id == dispatch.vehicleId);
+            if (vehicle) {
+                document.getElementById('operationVehicle').value = vehicle.id;
+            }
+            document.getElementById('operationDate').value = dispatch.requestDate;
             document.getElementById('operationStartTime').value = dispatch.startTime;
             document.getElementById('operationEndTime').value = dispatch.endTime;
-            document.getElementById('operationStartLocation').value = dispatch.startLocation;
-            document.getElementById('operationEndLocation').value = dispatch.endLocation;
+            document.getElementById('operationStartLocation').value = dispatch.destination;
+            document.getElementById('operationEndLocation').value = dispatch.destination;
             document.getElementById('operationPurpose').value = dispatch.purpose;
         }
     }
@@ -1080,27 +1131,27 @@ function exportToExcel(timeframe) {
     switch(timeframe) {
         case 'daily':
             filteredDispatches = dispatches.filter(d => {
-                const dispatchDate = new Date(d.date);
+                const dispatchDate = new Date(d.requestDate);
                 return dispatchDate.toDateString() === now.toDateString();
             });
             break;
         case 'weekly':
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             filteredDispatches = dispatches.filter(d => {
-                const dispatchDate = new Date(d.date);
+                const dispatchDate = new Date(d.requestDate);
                 return dispatchDate >= weekAgo;
             });
             break;
         case 'monthly':
             filteredDispatches = dispatches.filter(d => {
-                const dispatchDate = new Date(d.date);
+                const dispatchDate = new Date(d.requestDate);
                 return dispatchDate.getMonth() === now.getMonth() && 
                        dispatchDate.getFullYear() === now.getFullYear();
             });
             break;
         case 'yearly':
             filteredDispatches = dispatches.filter(d => {
-                const dispatchDate = new Date(d.date);
+                const dispatchDate = new Date(d.requestDate);
                 return dispatchDate.getFullYear() === now.getFullYear();
             });
             break;
@@ -1115,21 +1166,23 @@ function exportToExcel(timeframe) {
     
     // CSV 헤더 (한글 지원)
     let csvContent = '\uFEFF'; // BOM 추가로 한글 지원
-    csvContent += '신청자,차량,사용일,시작시간,종료시간,출발지,도착지,목적,승객수,상태,비고\n';
+    csvContent += '요청자,부서,차량,사용날짜,출발시간,도착시간,목적지,사용목적,우선순위,상태\n';
     
     filteredDispatches.forEach(dispatch => {
+        const vehicle = vehicles.find(v => v.id == dispatch.vehicleId);
+        const vehicleInfo = vehicle ? `${vehicle.number} (${vehicle.type})` : '차량 정보 없음';
+        
         const row = [
-            dispatch.applicant,
-            dispatch.vehicle,
-            dispatch.date,
-            dispatch.startTime,
-            dispatch.endTime,
-            dispatch.startLocation,
-            dispatch.endLocation,
-            dispatch.purpose,
-            dispatch.passengers,
-            dispatch.status,
-            dispatch.remarks || ''
+            dispatch.requester || '',
+            dispatch.department || '',
+            vehicleInfo,
+            dispatch.requestDate || '',
+            dispatch.startTime || '',
+            dispatch.endTime || '',
+            dispatch.destination || '',
+            dispatch.purpose || '',
+            dispatch.priority || '',
+            dispatch.status || ''
         ].map(field => `"${field}"`).join(',');
         
         csvContent += row + '\n';
@@ -1144,6 +1197,8 @@ function exportToExcel(timeframe) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    showNotification(`${timeframe} 보고서가 다운로드되었습니다.`, 'success');
 }
 
 // 차량 상태 팝업 함수
@@ -1362,17 +1417,17 @@ function handlePasswordChange(event) {
 function handleApplicantSearch(event) {
     const searchTerm = event.target.value.toLowerCase();
     const applicantDispatches = dispatches.filter(d => 
-        d.applicant && d.applicant.toLowerCase().includes(searchTerm)
+        d.requester && d.requester.toLowerCase().includes(searchTerm)
     );
     
     const applicantOperations = operations.filter(op => {
         const relatedDispatch = dispatches.find(d => 
-            d.vehicle === op.vehicle && 
-            d.date === op.date && 
-            d.status === '승인됨'
+            d.vehicleId === op.vehicleId && 
+            d.requestDate === op.date && 
+            (d.status === '승인' || d.status === '승인됨')
         );
-        return relatedDispatch && relatedDispatch.applicant && 
-               relatedDispatch.applicant.toLowerCase().includes(searchTerm);
+        return relatedDispatch && relatedDispatch.requester && 
+               relatedDispatch.requester.toLowerCase().includes(searchTerm);
     });
     
     renderApplicantSearchResults(applicantDispatches, applicantOperations);
@@ -1390,11 +1445,18 @@ function renderApplicantSearchResults(dispatches, operations) {
         if (dispatches.length > 0) {
             html += '<h4>배차 신청 내역</h4>';
             dispatches.forEach(dispatch => {
+                // 차량 정보 가져오기
+                const vehicle = vehicles.find(v => v.id === dispatch.vehicleId);
+                const vehicleInfo = vehicle ? vehicle.number : '알 수 없음';
+                
                 html += `
                     <div class="search-result-item">
-                        <p><strong>신청자:</strong> ${dispatch.applicant}</p>
-                        <p><strong>차량:</strong> ${dispatch.vehicle}</p>
-                        <p><strong>사용일:</strong> ${dispatch.date}</p>
+                        <p><strong>신청자:</strong> ${dispatch.requester}</p>
+                        <p><strong>부서:</strong> ${dispatch.department}</p>
+                        <p><strong>차량:</strong> ${vehicleInfo}</p>
+                        <p><strong>사용일:</strong> ${dispatch.requestDate}</p>
+                        <p><strong>시간:</strong> ${dispatch.startTime} - ${dispatch.endTime}</p>
+                        <p><strong>목적지:</strong> ${dispatch.destination}</p>
                         <p><strong>상태:</strong> <span class="status-badge ${getStatusClass(dispatch.status)}">${dispatch.status}</span></p>
                     </div>
                 `;
@@ -1404,9 +1466,13 @@ function renderApplicantSearchResults(dispatches, operations) {
         if (operations.length > 0) {
             html += '<h4>운행 내역</h4>';
             operations.forEach(operation => {
+                // 차량 정보 가져오기
+                const vehicle = vehicles.find(v => v.id === operation.vehicleId);
+                const vehicleInfo = vehicle ? vehicle.number : '알 수 없음';
+                
                 html += `
                     <div class="search-result-item">
-                        <p><strong>차량:</strong> ${operation.vehicle}</p>
+                        <p><strong>차량:</strong> ${vehicleInfo}</p>
                         <p><strong>운행일:</strong> ${operation.date}</p>
                         <p><strong>기사:</strong> ${operation.driver || '미입력'}</p>
                         <p><strong>실제주행거리:</strong> ${operation.actualKm}km</p>
@@ -1445,8 +1511,8 @@ function showOperationModal(operationId = null) {
             vehicleSelect.innerHTML = '<option value="">차량을 선택하세요</option>';
             vehicles.forEach(vehicle => {
                 const option = document.createElement('option');
-                option.value = vehicle.number;
-                option.textContent = `${vehicle.number} - ${vehicle.model}`;
+                option.value = vehicle.id;
+                option.textContent = `${vehicle.number} (${vehicle.type})`;
                 vehicleSelect.appendChild(option);
             });
         }
@@ -1456,7 +1522,7 @@ function showOperationModal(operationId = null) {
             const operation = operations.find(op => op.id === operationId);
             if (operation) {
                 document.getElementById('operationModalTitle').textContent = '운행 기록 수정';
-                document.getElementById('operationVehicle').value = operation.vehicle;
+                document.getElementById('operationVehicle').value = operation.vehicleId;
                 document.getElementById('operationDate').value = operation.date;
                 document.getElementById('operationStartTime').value = operation.startTime;
                 document.getElementById('operationEndTime').value = operation.endTime;
@@ -1537,3 +1603,83 @@ emailjs.send("twowhy", "template_cyzz7wr", {
     dispatch_date: dispatch.date,
     dispatch_time: dispatch.startTime + " ~ " + dispatch.endTime
 });
+
+// 데이터 관리 함수들
+async function exportData(dataType) {
+    try {
+        await dataManager.exportData(dataType);
+        showNotification(`${dataType} 데이터가 성공적으로 내보내기되었습니다.`, 'success');
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        showNotification('데이터 내보내기 중 오류가 발생했습니다.', 'error');
+    }
+}
+
+function importData(dataType) {
+    const fileInput = document.getElementById(`${dataType}File`);
+    if (fileInput) {
+        fileInput.click();
+    }
+}
+
+async function handleFileImport(dataType, fileInput) {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        try {
+            const success = await dataManager.importData(dataType, file);
+            if (success) {
+                showNotification(`${dataType} 데이터가 성공적으로 가져와졌습니다.`, 'success');
+                // 데이터 다시 로드
+                await loadData();
+                renderAllData();
+            } else {
+                showNotification('데이터 가져오기 중 오류가 발생했습니다.', 'error');
+            }
+        } catch (error) {
+            console.error('Error importing data:', error);
+            showNotification('데이터 가져오기 중 오류가 발생했습니다.', 'error');
+        }
+        fileInput.value = ''; // 파일 입력 초기화
+    }
+}
+
+async function createBackup() {
+    try {
+        const response = await fetch('/backup', { method: 'POST' });
+        const result = await response.json();
+        if (result.success) {
+            showNotification('백업이 성공적으로 생성되었습니다.', 'success');
+        } else {
+            showNotification('백업 생성 중 오류가 발생했습니다.', 'error');
+        }
+    } catch (error) {
+        console.error('Error creating backup:', error);
+        showNotification('백업 생성 중 오류가 발생했습니다.', 'error');
+    }
+}
+
+function showRestoreModal() {
+    // 간단한 날짜 입력 모달 표시
+    const date = prompt('복원할 백업 날짜를 입력하세요 (YYYY-MM-DD 형식):');
+    if (date) {
+        restoreBackup(date);
+    }
+}
+
+async function restoreBackup(date) {
+    try {
+        const response = await fetch(`/restore/${date}`, { method: 'POST' });
+        const result = await response.json();
+        if (result.success) {
+            showNotification('백업이 성공적으로 복원되었습니다.', 'success');
+            // 데이터 다시 로드
+            await loadData();
+            renderAllData();
+        } else {
+            showNotification('백업 복원 중 오류가 발생했습니다.', 'error');
+        }
+    } catch (error) {
+        console.error('Error restoring backup:', error);
+        showNotification('백업 복원 중 오류가 발생했습니다.', 'error');
+    }
+}

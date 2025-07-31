@@ -10,18 +10,23 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // 앱 초기화
-function initializeApp() {
-    loadData();
+async function initializeApp() {
+    await loadData();
     renderVehicles();
     renderDispatches();
 }
 
 // 데이터 로드
-function loadData() {
-    vehicles = JSON.parse(localStorage.getItem('vehicles')) || [];
-    dispatches = JSON.parse(localStorage.getItem('dispatches')) || [];
-    
-    // 저장된 데이터가 없으면 빈 배열 유지
+async function loadData() {
+    try {
+        vehicles = await dataManager.loadData('vehicles');
+        dispatches = await dataManager.loadData('dispatches');
+    } catch (error) {
+        console.error('Error loading data:', error);
+        // localStorage에서 복원 시도
+        vehicles = dataManager.restoreFromLocalStorage('vehicles');
+        dispatches = dataManager.restoreFromLocalStorage('dispatches');
+    }
 }
 
 // 이벤트 리스너 설정
@@ -258,14 +263,19 @@ function handleDispatchSubmit(event) {
     event.preventDefault();
     
     const formData = new FormData(event.target);
+    
+    // datetime-local 값을 파싱하여 날짜와 시간 분리
+    const startDateTime = new Date(formData.get('startDateTime'));
+    const endDateTime = new Date(formData.get('endDateTime'));
+    
     const dispatchData = {
         id: Date.now(),
         requester: formData.get('requester'),
         department: formData.get('department'),
         vehicleId: formData.get('vehicleSelect'),
-        requestDate: formData.get('requestDate'),
-        startTime: formData.get('startTime'),
-        endTime: formData.get('endTime'),
+        requestDate: startDateTime.toISOString().split('T')[0],
+        startTime: startDateTime.toTimeString().slice(0, 5),
+        endTime: endDateTime.toTimeString().slice(0, 5),
         destination: formData.get('destination'),
         purpose: formData.get('purpose'),
         priority: formData.get('priority'),
@@ -274,7 +284,7 @@ function handleDispatchSubmit(event) {
     };
     
     // 시간 검증
-    if (!validateDateTime(dispatchData.requestDate, dispatchData.startTime)) {
+    if (startDateTime < new Date()) {
         showNotification('현재시간 기준 과거 일시로 배차를 입력할 수 없습니다. 일시를 확인해주세요.', 'error');
         return;
     }
@@ -286,15 +296,20 @@ function handleDispatchSubmit(event) {
         }
     }
 
-    dispatches.push(dispatchData);
-    localStorage.setItem('dispatches', JSON.stringify(dispatches));
-    
-    // 이메일 알림 전송
-    sendEmailNotification(dispatchData);
+    // 데이터 매니저를 사용하여 저장
+    dataManager.addItem('dispatches', dispatchData).then(() => {
+        dispatches.push(dispatchData);
+        
+        // 이메일 알림 전송
+        sendEmailNotification(dispatchData);
 
-    showNotification('배차 신청이 완료되었습니다.', 'success');
-    event.target.reset();
-    renderDispatches();
+        showNotification('배차 신청이 완료되었습니다.', 'success');
+        event.target.reset();
+        renderDispatches();
+    }).catch(error => {
+        console.error('Error saving dispatch:', error);
+        showNotification('배차 신청 저장 중 오류가 발생했습니다.', 'error');
+    });
 }
 
 // 검색 처리

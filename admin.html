@@ -8,7 +8,7 @@
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="#667eea" name="theme-color"/>
-<title>차량 배차 시스템 - 관리자</title>
+<title>CPBC 가톨릭평화방송 배차 시스템</title>
 <link href="styles.css" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
 </head>
@@ -64,8 +64,11 @@
 <button class="nav-btn" onclick="showSection('dashboard')">
 <i class="fas fa-chart-bar"></i> 통계
                 </button>
-<button class="nav-btn" onclick="showSection('export')">
-<i class="fas fa-file-excel"></i> 엑셀 내보내기
+                <button class="nav-btn" onclick="showSection('export')">
+                <i class="fas fa-file-excel"></i> 엑셀 내보내기
+                </button>
+                <button class="nav-btn" onclick="showSection('data-management')">
+                <i class="fas fa-database"></i> 데이터 관리
                 </button>
 </nav>
 <main class="main-content">
@@ -92,6 +95,12 @@
 <h2><i class="fas fa-list"></i> 배차 관리</h2>
 <div class="search-filter">
 <input class="search-input" id="dispatchSearchInput" placeholder="검색어를 입력하세요..." type="text"/>
+<div class="period-filters">
+<button class="filter-btn active" data-period="all">전체</button>
+<button class="filter-btn" data-period="daily">일간</button>
+<button class="filter-btn" data-period="monthly">월간</button>
+<button class="filter-btn" data-period="yearly">연간</button>
+</div>
 <div class="status-filters">
 <button class="filter-btn active" data-status="all">전체</button>
 <button class="filter-btn" data-status="대기중">대기중</button>
@@ -268,9 +277,79 @@
 <i class="fas fa-save"></i> 비밀번호 변경
                             </button>
 </div>
-</form>
-</section>
-</main>
+    </form>
+    </section>
+    
+    <!-- 데이터 관리 섹션 -->
+    <section class="content-section" id="data-management">
+        <h2><i class="fas fa-database"></i> 데이터 관리</h2>
+        <div class="data-management-grid">
+            <div class="data-card">
+                <h3><i class="fas fa-car"></i> 차량 데이터</h3>
+                <div class="data-actions">
+                    <button class="btn btn-primary" onclick="exportData('vehicles')">
+                        <i class="fas fa-download"></i> 내보내기
+                    </button>
+                    <button class="btn btn-secondary" onclick="importData('vehicles')">
+                        <i class="fas fa-upload"></i> 가져오기
+                    </button>
+                    <input type="file" id="vehiclesFile" accept=".json" style="display: none;" onchange="handleFileImport('vehicles', this)">
+                </div>
+            </div>
+            
+            <div class="data-card">
+                <h3><i class="fas fa-list"></i> 배차 데이터</h3>
+                <div class="data-actions">
+                    <button class="btn btn-primary" onclick="exportData('dispatches')">
+                        <i class="fas fa-download"></i> 내보내기
+                    </button>
+                    <button class="btn btn-secondary" onclick="importData('dispatches')">
+                        <i class="fas fa-upload"></i> 가져오기
+                    </button>
+                    <input type="file" id="dispatchesFile" accept=".json" style="display: none;" onchange="handleFileImport('dispatches', this)">
+                </div>
+            </div>
+            
+            <div class="data-card">
+                <h3><i class="fas fa-route"></i> 운행 데이터</h3>
+                <div class="data-actions">
+                    <button class="btn btn-primary" onclick="exportData('operations')">
+                        <i class="fas fa-download"></i> 내보내기
+                    </button>
+                    <button class="btn btn-secondary" onclick="importData('operations')">
+                        <i class="fas fa-upload"></i> 가져오기
+                    </button>
+                    <input type="file" id="operationsFile" accept=".json" style="display: none;" onchange="handleFileImport('operations', this)">
+                </div>
+            </div>
+            
+            <div class="data-card">
+                <h3><i class="fas fa-tools"></i> 점검 데이터</h3>
+                <div class="data-actions">
+                    <button class="btn btn-primary" onclick="exportData('inspections')">
+                        <i class="fas fa-download"></i> 내보내기
+                    </button>
+                    <button class="btn btn-secondary" onclick="importData('inspections')">
+                        <i class="fas fa-upload"></i> 가져오기
+                    </button>
+                    <input type="file" id="inspectionsFile" accept=".json" style="display: none;" onchange="handleFileImport('inspections', this)">
+                </div>
+            </div>
+        </div>
+        
+        <div class="backup-section">
+            <h3><i class="fas fa-save"></i> 백업 및 복원</h3>
+            <div class="backup-actions">
+                <button class="btn btn-primary" onclick="createBackup()">
+                    <i class="fas fa-save"></i> 백업 생성
+                </button>
+                <button class="btn btn-warning" onclick="showRestoreModal()">
+                    <i class="fas fa-undo"></i> 백업 복원
+                </button>
+            </div>
+        </div>
+    </section>
+    </main>
 </div>
 </div>
 <!-- 차량 등록/수정 모달 -->
@@ -375,10 +454,6 @@
 <input id="operationActualKm" name="operationActualKm" placeholder="실제 주행 거리" required="" type="number"/>
 </div>
 <div class="form-group">
-<label for="operationGoogleKm">구글맵 거리 (km)</label>
-<input id="operationGoogleKm" name="operationGoogleKm" placeholder="구글맵 계산 거리" type="number"/>
-</div>
-<div class="form-group">
 <label for="operationPurpose">운행 목적</label>
 <input id="operationPurpose" name="operationPurpose" placeholder="운행 목적" type="text"/>
 </div>
@@ -478,6 +553,7 @@
 </div>
 <!-- 알림 메시지 -->
 <div class="notification" id="notification"></div>
-<script src="admin-script.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="admin-script.js"></script>
 </body>
 </html> 
